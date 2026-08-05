@@ -1,16 +1,16 @@
 import type { Metadata } from 'next'
 import { ContactContent } from '@/components/contact-content'
 
-const title = 'Contact | Ameyalli'
+const title = 'Contact Us | kawsayvida.com'
 const ogImage = '/images/contact-bg.jpg'
 
 export const metadata: Metadata = {
   title,
   description:
-    'Reach out to Ameyalli with questions, intentions, or to sign up for notifications on new events and offerings.',
+    'Reach out to kawsayvida.com with questions about an upcoming Ayahuasca medicine retreat.',
   openGraph: {
     type: 'website',
-    siteName: 'Ameyalli',
+    siteName: 'kawsayvida.com',
     title,
     description: title,
     images: [{ url: ogImage, width: 1200, height: 630, alt: title }],

@@ -84,14 +84,14 @@ export function HeroSlider() {
 
           <div className="mt-10 flex flex-wrap items-center gap-4">
             <Link
-              href="/services"
+              href="/retreats"
               className="group inline-flex items-center gap-2 bg-primary px-8 py-3.5 text-xs uppercase tracking-[0.2em] text-primary-foreground transition-colors hover:bg-primary/90"
             >
               {t.hero.exploreOfferings}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
             <Link
-              href="/events"
+              href="/retreats/registration"
               className="inline-flex items-center gap-2 border border-foreground/40 px-8 py-3.5 text-xs uppercase tracking-[0.2em] text-foreground transition-colors hover:border-primary hover:text-primary"
             >
               {t.hero.upcomingEvents}

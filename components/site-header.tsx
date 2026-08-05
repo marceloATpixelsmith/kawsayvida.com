@@ -37,12 +37,12 @@ export function SiteHeader() {
       )}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-7 lg:px-10 lg:py-9">
-        <Link href="/" className="flex items-center text-foreground" aria-label="Ameyalli — home">
+        <Link href="/" className="flex items-center text-foreground" aria-label="kawsayvida.com — home">
           <LogoMark className="h-12 w-auto sm:h-14 lg:h-16" />
         </Link>
 
-        <div className="hidden items-center md:flex">
-          <nav className="flex items-center gap-8">
+        <div className="hidden items-center lg:flex">
+          <nav className="flex items-center gap-5 xl:gap-6">
             {navItems.map((item) => {
               const active =
                 item.href === '/'
@@ -53,7 +53,7 @@ export function SiteHeader() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'group relative text-xs font-medium uppercase tracking-[0.22em] transition-colors',
+                    'group relative text-[0.68rem] font-medium uppercase tracking-[0.16em] transition-colors whitespace-nowrap xl:text-xs xl:tracking-[0.2em]',
                     active ? 'text-primary' : 'text-foreground/80 hover:text-primary',
                   )}
                 >
@@ -68,14 +68,14 @@ export function SiteHeader() {
               )
             })}
           </nav>
-          <span className="ml-8 h-4 w-px bg-border/60" aria-hidden="true" />
-          <LanguageToggle className="ml-8" />
+          <span className="ml-6 h-4 w-px bg-border/60 xl:ml-8" aria-hidden="true" />
+          <LanguageToggle className="ml-6 xl:ml-8" />
         </div>
 
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="flex h-10 w-10 items-center justify-center text-foreground md:hidden"
+          className="flex h-10 w-10 items-center justify-center text-foreground lg:hidden"
           aria-label={open ? 'Close menu' : 'Open menu'}
           aria-expanded={open}
         >
@@ -87,8 +87,8 @@ export function SiteHeader() {
       {/* Mobile menu */}
       <div
         className={cn(
-          'overflow-hidden bg-background/95 backdrop-blur-md transition-[max-height] duration-500 md:hidden',
-          open ? 'max-h-96 border-t border-border/40' : 'max-h-0',
+          'overflow-y-auto bg-background/95 backdrop-blur-md transition-[max-height] duration-500 lg:hidden',
+          open ? 'max-h-[calc(100svh-5.5rem)] border-t border-border/40' : 'max-h-0',
         )}
       >
         <nav className="flex flex-col px-6 py-4">

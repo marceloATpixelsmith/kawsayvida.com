@@ -20,28 +20,28 @@ const jost = Jost({
   display: 'swap',
 })
 
-const homeTitle = 'Ameyalli | Medicine Music & Sacred Healing'
+const homeTitle = 'kawsayvida.com | Retiros de Medicina — Ayahuasca Retreats'
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://www.ameyalli.space'),
+  metadataBase: new URL('https://www.kawsayvida.com'),
   title: homeTitle,
   description:
-    'Ameyalli is a medicine musician, sound healer, and Chinese Medicine practitioner offering group ceremonies, one-on-one ceremonies, microdosing coaching, and Chinese Medicine.',
-  applicationName: 'Ameyalli',
+    'Germán Virguez and Lupita Castro guide Ayahuasca medicine retreats in the Sacred Valley, Perú and Valle de Bravo, México — ceremony, integration, and medicine music since 2007.',
+  applicationName: 'kawsayvida.com',
   generator: 'v0.app',
   manifest: '/favicons/site.webmanifest',
   openGraph: {
     type: 'website',
-    siteName: 'Ameyalli',
+    siteName: 'kawsayvida.com',
     title: homeTitle,
     description: homeTitle,
-    images: [{ url: '/images/hero-ceremony.jpg', width: 1200, height: 630, alt: homeTitle }],
+    images: [{ url: '/images/hero-retreats.jpg', width: 1200, height: 630, alt: homeTitle }],
   },
   twitter: {
     card: 'summary_large_image',
     title: homeTitle,
     description: homeTitle,
-    images: ['/images/hero-ceremony.jpg'],
+    images: ['/images/hero-retreats.jpg'],
   },
   icons: {
     icon: [
@@ -53,14 +53,14 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    title: 'Ameyalli',
-    statusBarStyle: 'black-translucent',
+    title: 'kawsayvida.com',
+    statusBarStyle: 'default',
   },
 }
 
 export const viewport: Viewport = {
-  colorScheme: 'dark',
-  themeColor: '#12161f',
+  colorScheme: 'light',
+  themeColor: '#65bc7b',
 }
 
 export default function RootLayout({
@@ -69,7 +69,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`dark bg-background ${cormorant.variable} ${jost.variable}`}>
+    <html lang="en" className={`bg-background ${cormorant.variable} ${jost.variable}`}>
       <body className="min-h-screen font-sans antialiased">
         <LanguageProvider>
           <SiteHeader />
