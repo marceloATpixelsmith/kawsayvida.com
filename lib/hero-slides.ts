@@ -18,58 +18,42 @@ export type HeroSlide = {
 
 export const heroSlides: HeroSlide[] = [
   {
-    image: '/images/hero-ceremony.jpg',
+    image: '/images/hero-retreats.jpg',
     alt: {
-      en: 'A group seated in a ceremonial circle with candles and live music',
-      es: 'Un grupo sentado en círculo ceremonial con velas y música en vivo',
+      en: 'A path through the jungle leading toward a retreat house at dusk',
+      es: 'Un camino en la selva que conduce hacia una casa de retiro al atardecer',
     },
-    eyebrow: { en: 'Sacred Space', es: 'Espacio Sagrado' },
-    title: {
-      en: 'Group & One-on-One Ceremonies',
-      es: 'Ceremonias Grupales e Individuales',
-    },
+    eyebrow: { en: 'Deep Healing — Ayahuasca Medicine', es: 'Sanación Profunda — Medicina Ayahuasca' },
+    title: { en: 'Teacher Plant Retreats', es: 'Retiros de Plantas Maestras' },
     subtitle: {
-      en: 'Carefully held containers woven with Shipibo ikáros and live medicine song — in circle or one-on-one.',
-      es: 'Espacios cuidadosamente sostenidos, tejidos con ikáros shipibo y canto de medicina en vivo — en círculo o de forma individual.',
+      en: 'Ayahuasca ceremonies, group integration, meditation and Tibetan Yoga, held by German Virguez and Lupita Castro since 2007.',
+      es: 'Ceremonias de Ayahuasca, integración grupal, meditación y yoga tibetano, sostenidos por German Virguez y Lupita Castro desde 2007.',
     },
   },
   {
-    image: '/images/hero-microdosing.jpg',
+    image: '/images/hero-sacred-sites.jpg',
     alt: {
-      en: 'A hand holding a tiny mushroom in a forest setting',
-      es: 'Una mano sosteniendo un hongo pequeño en un entorno de bosque',
+      en: 'The Vilcanota river running through the Sacred Valley of Cusco, Perú',
+      es: 'El río Vilcanota atravesando el Valle Sagrado de Cusco, Perú',
     },
-    eyebrow: { en: 'Guided Path', es: 'Camino Guiado' },
-    title: { en: 'Microdosing Program', es: 'Programa de Microdosis' },
+    eyebrow: { en: 'Sacred Sites', es: 'Sitios Sagrados' },
+    title: { en: 'Perú & México', es: 'Perú y México' },
     subtitle: {
-      en: 'A structured, supported protocol to work gently and intentionally over time.',
-      es: 'Un protocolo estructurado y acompañado para trabajar de forma suave e intencional a lo largo del tiempo.',
+      en: 'Retreats held in the Sacred Valley, Cusco, Perú and in Valle de Bravo, México.',
+      es: 'Retiros realizados en el Valle Sagrado, Cusco, Perú y en Valle de Bravo, México.',
     },
   },
   {
-    image: '/images/hero-jungle.jpg',
+    image: '/images/hero-ayahuapu.jpg',
     alt: {
-      en: 'A wide river reflecting dense green rainforest and sky',
-      es: 'Un río ancho que refleja la selva verde y el cielo',
+      en: 'German and Lupita performing medicine music together in ceremony',
+      es: 'German y Lupita interpretando música medicina juntos en ceremonia',
     },
-    eyebrow: { en: 'Lineage & Roots', es: 'Linaje y Raíces' },
-    title: { en: 'Rooted in the Amazon', es: 'Arraigado en la Amazonía' },
+    eyebrow: { en: 'Medicine Music', es: 'Música Medicina' },
+    title: { en: 'Ayahuapu', es: 'Ayahuapu' },
     subtitle: {
-      en: 'A path honed one-on-one with the master plants and wisdom keepers of the jungle.',
-      es: 'Un camino forjado de forma individual con las plantas maestras y los guardianes de la sabiduría de la selva.',
-    },
-  },
-  {
-    image: '/images/hero-chinese.jpg',
-    alt: {
-      en: 'Herbs, a mortar and pestle, and an acupuncture model on a wooden table',
-      es: 'Hierbas, un mortero y un modelo de acupuntura sobre una mesa de madera',
-    },
-    eyebrow: { en: 'Ancient Wisdom', es: 'Sabiduría Ancestral' },
-    title: { en: 'Chinese Medicine', es: 'Medicina China' },
-    subtitle: {
-      en: 'Acupuncture and herbal medicine to restore balance and support the whole body.',
-      es: 'Acupuntura y herbolaria para restaurar el equilibrio y apoyar todo el cuerpo.',
+      en: 'Original medicine music, blending the melodies of Amazon and Andes, East and West.',
+      es: 'Música medicina original, que fusiona las melodías de la Amazonía y los Andes, Oriente y Occidente.',
     },
   },
 ]

@@ -14,7 +14,7 @@ export const LOCALES = ['en', 'es'] as const
 export type Lang = (typeof LOCALES)[number]
 
 export const DEFAULT_LANG: Lang = 'en'
-export const LANG_COOKIE = 'ameyalli_lang'
+export const LANG_COOKIE = 'kawsayvida_lang'
 
 /** A string (or string array) that exists in both languages. */
 export type Localized<T = string> = { en: T; es: T }

@@ -14,7 +14,7 @@ export function AboutContent() {
       <PageHeader
         eyebrow={t.pageHeaders.about.eyebrow}
         title={t.pageHeaders.about.title}
-        image="/images/hero-singing.jpg"
+        image="/images/hero-retreats.jpg"
         alt={t.about.headerAlt}
       />
 
@@ -37,12 +37,12 @@ export function AboutContent() {
         </div>
       </section>
 
-      {/* About Sama */}
+      {/* Ayahuapu — Medicine Music */}
       <section className="border-t border-border/50 bg-card py-20 lg:py-28">
         <div className="mx-auto grid max-w-7xl items-center gap-14 px-6 lg:grid-cols-2 lg:gap-20 lg:px-10">
           <div className="relative order-2 aspect-[5/6] w-full overflow-hidden border border-border/60 lg:order-1">
             <Image
-              src="/images/about-sama.jpg"
+              src="/images/about-ayahuapu.jpg"
               alt={t.about.samaAlt}
               fill
               sizes="(min-width: 1024px) 45vw, 100vw"
@@ -73,7 +73,7 @@ export function AboutContent() {
           </h2>
           <p className="mt-4 text-muted-foreground leading-relaxed">{t.about.cta.text}</p>
           <Link
-            href="/services"
+            href="/retreats"
             className="group mt-8 inline-flex items-center gap-2 bg-primary px-8 py-3.5 text-xs uppercase tracking-[0.2em] text-primary-foreground transition-colors hover:bg-primary/90"
           >
             {t.about.cta.button}

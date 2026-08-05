@@ -1,16 +1,16 @@
 import type { Metadata } from 'next'
 import { AboutContent } from '@/components/about-content'
 
-const title = 'About | Ameyalli'
-const ogImage = '/images/hero-singing.jpg'
+const title = 'About Us | kawsayvida.com'
+const ogImage = '/images/hero-retreats.jpg'
 
 export const metadata: Metadata = {
   title,
   description:
-    'Ameyalli is a medicine musician, sound healer, and Chinese Medicine practitioner trained in the Shipibo lineage of the Amazon jungle.',
+    'German Virguez (Venezuela) and Lupita Castro (Mexico) walk a sacred path devoted to healing and the expansion of consciousness with master plants.',
   openGraph: {
     type: 'website',
-    siteName: 'Ameyalli',
+    siteName: 'kawsayvida.com',
     title,
     description: title,
     images: [{ url: ogImage, width: 1200, height: 630, alt: title }],

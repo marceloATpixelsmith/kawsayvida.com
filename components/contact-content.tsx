@@ -16,7 +16,7 @@ export function ContactContent() {
         eyebrow={t.pageHeaders.contact.eyebrow}
         title={t.pageHeaders.contact.title}
         image="/images/contact-bg.jpg"
-        alt="Blue-white mycelium spreading across dark wood"
+        alt="Traditional retreat house nestled among trees in the Sacred Valley"
       />
 
       <section className="bg-background pb-20 pt-10 lg:py-28">
@@ -47,8 +47,8 @@ export function ContactContent() {
 
             <div className="relative mt-10 hidden aspect-[4/3] w-full overflow-hidden border border-border/60 lg:block">
               <Image
-                src="/images/hero-jungle.jpg"
-                alt="A wide river reflecting dense green rainforest and sky"
+                src="/images/contact-ausangate.jpg"
+                alt="Apu Ausangate, one of the most revered sacred mountains of the Andes"
                 fill
                 sizes="40vw"
                 className="object-cover"

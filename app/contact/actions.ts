@@ -90,10 +90,11 @@ export async function sendContactMessage(
   _prev: ContactState,
   formData: FormData,
 ): Promise<ContactState> {
-  const name = String(formData.get('name') ?? '').trim()
+  const firstName = String(formData.get('firstName') ?? '').trim()
+  const lastName = String(formData.get('lastName') ?? '').trim()
+  const name = [firstName, lastName].filter(Boolean).join(' ')
   const email = String(formData.get('email') ?? '').trim()
   const message = String(formData.get('message') ?? '').trim()
-  const notify = formData.get('notify') === 'on'
   const turnstileToken = String(formData.get('cf-turnstile-response') ?? '').trim()
 
   // Honeypot field — bots fill this, humans don't.
@@ -101,7 +102,7 @@ export async function sendContactMessage(
     return { status: 'success', code: 'success' }
   }
 
-  if (!name || !email || !message) {
+  if (!firstName || !email || !message) {
     return { status: 'error', code: 'missing' }
   }
   if (name.length > CONTACT_LIMITS.nameMax || message.length > CONTACT_LIMITS.messageMax) {
@@ -133,7 +134,6 @@ export async function sendContactMessage(
       hasBrevoSenderEmail: Boolean(senderEmail),
       name,
       email,
-      notify,
       message,
     })
     return { status: 'error', code: 'notConnected' }
@@ -155,7 +155,7 @@ export async function sendContactMessage(
       },
       body: JSON.stringify({
         sender: {
-          name: 'Ameyalli Contact Form',
+          name: 'kawsayvida.com Contact Form',
           email: senderEmail,
         },
         to: [{ email: siteConfig.email }],
@@ -163,12 +163,8 @@ export async function sendContactMessage(
           email,
           name,
         },
-        subject: `New message from ${name}${notify ? ' (wants event updates)' : ''}`,
-        textContent:
-          `Name: ${name}\n` +
-          `Email: ${email}\n` +
-          `Wants event notifications: ${notify ? 'Yes' : 'No'}\n\n` +
-          `${message}\n`,
+        subject: `New message from ${name}`,
+        textContent: `Name: ${name}\n` + `Email: ${email}\n\n` + `${message}\n`,
       }),
     })
 

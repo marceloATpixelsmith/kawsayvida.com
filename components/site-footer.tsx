@@ -14,7 +14,7 @@ export function SiteFooter() {
       <div className="mx-auto max-w-7xl px-6 py-16 lg:px-10">
         <div className="grid gap-12 md:grid-cols-3">
           <div>
-            <Link href="/" className="flex items-center text-foreground" aria-label="Ameyalli — home">
+            <Link href="/" className="flex items-center text-foreground" aria-label="kawsayvida.com — home">
               <LogoMark className="h-10 w-auto" />
             </Link>
             <p className="mt-5 max-w-xs text-sm leading-relaxed text-muted-foreground">
@@ -61,7 +61,7 @@ export function SiteFooter() {
                   rel="noreferrer"
                   className="text-foreground/80 transition-colors hover:text-primary"
                 >
-                  facebook.com/ameyalli.space
+                  Facebook
                 </a>
               </li>
               <li>
@@ -71,7 +71,27 @@ export function SiteFooter() {
                   rel="noreferrer"
                   className="text-foreground/80 transition-colors hover:text-primary"
                 >
-                  youtube.com
+                  YouTube
+                </a>
+              </li>
+              <li>
+                <a
+                  href={siteConfig.social.instagram}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-foreground/80 transition-colors hover:text-primary"
+                >
+                  Instagram
+                </a>
+              </li>
+              <li>
+                <a
+                  href={siteConfig.social.soundcloud}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-foreground/80 transition-colors hover:text-primary"
+                >
+                  Soundcloud (Ayahuapu)
                 </a>
               </li>
             </ul>
@@ -79,7 +99,7 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-14 flex flex-col items-center justify-between gap-2 border-t border-border/40 pt-8 text-xs uppercase tracking-[0.18em] text-muted-foreground sm:flex-row">
-          <span>© Ameyalli {new Date().getFullYear()}</span>
+          <span>© kawsayvida.com {new Date().getFullYear()}</span>
           <span>{t.footer.rights}</span>
         </div>
       </div>

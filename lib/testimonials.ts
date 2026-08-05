@@ -1,9 +1,7 @@
 // ---------------------------------------------------------------------------
 // Testimonials (bilingual).
-// - Written testimonials: add/remove/modify objects in `writtenTestimonials`.
-//   Each text field is localized: { en: "...", es: "..." }.
-// - Video testimonials: add/remove YouTube IDs in `videoTestimonials`.
-//   The `youTubeId` is the part after "watch?v=" or "youtu.be/" in a URL.
+// Add/remove/modify objects in `writtenTestimonials`.
+// Each text field is localized: { en: "...", es: "..." }.
 // ---------------------------------------------------------------------------
 
 import type { Localized } from '@/lib/i18n/config'
@@ -13,38 +11,37 @@ export type WrittenTestimonial = {
   author: string
 }
 
-export type VideoTestimonial = {
-  name: string
-  youTubeId: string
-}
-
 export const writtenTestimonials: WrittenTestimonial[] = [
   {
     quote: {
-      en: "He is patient, focused and attentive to addressing physical and mental obstacles. This healing music that comes through Ameyalli's singing cleared the mental clutter that clung to the back of my mind in such a short time. The songs are beautiful and the results are hard to believe. This freedom — from my mind — allowed me the clarity to be present. It's a wonderful experience!",
-      es: 'Es paciente, concentrado y atento para abordar los obstáculos físicos y mentales. Esta música sanadora que llega a través del canto de Ameyalli despejó en muy poco tiempo el desorden mental que se aferraba al fondo de mi mente. Las canciones son hermosas y los resultados son difíciles de creer. Esta libertad — de mi propia mente — me dio la claridad para estar presente. ¡Es una experiencia maravillosa!',
+      en: 'I have been participating for years in the ceremonies of Germán and Lupita. They are an exemplary couple, congruent and personally and spiritually accomplished. Their music and their songs are of a very high vibration that lead us to a very deep healing and unimaginable experiences!',
+      es: 'He estado participando por años en las ceremonias de Germán y Lupita. Son una pareja ejemplar, congruente y realizada personal y espiritualmente. ¡Su música y sus cantos son de una vibración muy alta que nos llevan a una sanación muy profunda y experiencias inimaginables!',
     },
-    author: 'Fiona C.',
+    author: 'Samuel',
   },
   {
     quote: {
-      en: 'Ameyalli creates a genuinely safe and nurturing space for healing! Before, during, and after the ceremony his thoughtfulness, professionalism, and care are apparent — and he is an exceptional guide. Deep gratitude, Ameyalli!',
-      es: '¡Ameyalli crea un espacio verdaderamente seguro y acogedor para la sanación! Antes, durante y después de la ceremonia, su atención, profesionalismo y cuidado son evidentes — y es un guía excepcional. ¡Profunda gratitud, Ameyalli!',
+      en: 'I am fortunate to have met Germán and Lupita more than 5 years ago. They have been an irreplaceable part of my path. Thanks to them internal issues came to light that probably would have taken me a long time to discover. I’m very grateful to them for all the healing.',
+      es: 'Tengo la fortuna de haber conocido a Germán y Lupita hace más de 5 años. Han sido una parte insustituible de mi camino. Gracias a ellos salieron a la luz asuntos internos que probablemente me habría tomado mucho tiempo descubrir. Les estoy muy agradecido por toda la sanación.',
     },
-    author: 'Sherry M.',
+    author: 'Alvaro',
   },
   {
     quote: {
-      en: "This was my first group ceremony with plant medicine and it exceeded my expectations. Set-up was comfortable, enjoyed combining medicine with cacao. Really enjoyed Ameyalli's beautiful singing and musical instrument live. It was magical and I highly recommend!!",
-      es: 'Esta fue mi primera ceremonia grupal con medicina de plantas y superó mis expectativas. El espacio era cómodo, disfruté combinar la medicina con el cacao. Disfruté muchísimo el hermoso canto de Ameyalli y su instrumento en vivo. Fue mágico y lo recomiendo mucho.',
+      en: 'I have been in contact with the plant for 16 years with different lineages, ceremony designs and traditions. I can say that Germán and Lupita are the most congruent servers of medicine, impeccable and with a high vibration, with the clarity of crystal. I recommend them a lot because this path is becoming more travelled and very few people can contain space with the same love and strength.',
+      es: 'He estado en contacto con la planta por 16 años con diferentes linajes, diseños de ceremonia y tradiciones. Puedo decir que Germán y Lupita son los servidores de medicina más congruentes, impecables y con una vibración alta, con la claridad del cristal. Los recomiendo mucho porque este camino se está transitando cada vez más y muy pocas personas pueden sostener el espacio con el mismo amor y fuerza.',
     },
-    author: 'J. Han',
+    author: 'Andrea',
+  },
+  {
+    quote: {
+      en: 'The music of Germán and Lupita is sublime and there is no better element to accompany you in your work with Abuelita Ayahuasca.',
+      es: 'La música de Germán y Lupita es sublime y no hay mejor elemento para acompañarte en tu trabajo con la Abuelita Ayahuasca.',
+    },
+    author: 'Marcelo',
   },
 ]
 
-// Replace these placeholder IDs with your real YouTube testimonial video IDs.
-export const videoTestimonials: VideoTestimonial[] = [
-  { name: 'S. Manis', youTubeId: '' },
-  { name: 'The Anointer', youTubeId: '' },
-  { name: 'Stefan T.', youTubeId: '' },
-]
+// No YouTube testimonial videos were found on the original site.
+export type VideoTestimonial = { name: string; youTubeId: string }
+export const videoTestimonials: VideoTestimonial[] = []

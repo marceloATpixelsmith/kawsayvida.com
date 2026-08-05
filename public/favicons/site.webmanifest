@@ -1,7 +1,7 @@
 {
-  "name": "Ameyalli",
-  "short_name": "Ameyalli",
-  "description": "Medicine Music & Sacred Healing",
+  "name": "kawsayvida.com",
+  "short_name": "kawsayvida",
+  "description": "Retiros de Medicina — Ayahuasca Retreats",
   "icons": [
     {
       "src": "/favicons/android-chrome-192x192.png",
@@ -16,8 +16,8 @@
       "purpose": "any"
     }
   ],
-  "theme_color": "#12161f",
-  "background_color": "#12161f",
+  "theme_color": "#65bc7b",
+  "background_color": "#ffffff",
   "display": "standalone",
   "start_url": "/",
   "scope": "/"

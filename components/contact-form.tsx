@@ -105,14 +105,15 @@ export function ContactForm() {
 
   function validateForm(event: FormEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget)
-    const name = String(formData.get('name') ?? '').trim()
+    const firstName = String(formData.get('firstName') ?? '').trim()
+    const lastName = String(formData.get('lastName') ?? '').trim()
     const email = String(formData.get('email') ?? '').trim()
     const message = String(formData.get('message') ?? '').trim()
     const nextErrors: ClientErrors = {}
 
-    if (!name) {
+    if (!firstName) {
       nextErrors.name = t.form.errors.nameRequired
-    } else if (name.length > fieldLimits.nameMax) {
+    } else if (firstName.length + lastName.length > fieldLimits.nameMax) {
       nextErrors.name = t.form.errors.nameTooLong
     }
 
@@ -171,12 +172,12 @@ export function ContactForm() {
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label htmlFor="name" className="mb-2 block text-xs uppercase tracking-[0.18em] text-primary">
+          <label htmlFor="firstName" className="mb-2 block text-xs uppercase tracking-[0.18em] text-primary">
             {t.form.nameLabel}
           </label>
           <input
-            id="name"
-            name="name"
+            id="firstName"
+            name="firstName"
             required
             maxLength={fieldLimits.nameMax}
             aria-invalid={Boolean(clientErrors.name)}
@@ -191,26 +192,39 @@ export function ContactForm() {
           )}
         </div>
         <div>
-          <label htmlFor="email" className="mb-2 block text-xs uppercase tracking-[0.18em] text-primary">
-            {t.form.emailLabel}
+          <label htmlFor="lastName" className="mb-2 block text-xs uppercase tracking-[0.18em] text-primary">
+            {t.form.lastNameLabel}
           </label>
           <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            maxLength={fieldLimits.emailMax}
-            aria-invalid={Boolean(clientErrors.email)}
-            aria-describedby={clientErrors.email ? 'email-error' : undefined}
-            className={cn(fieldClasses, clientErrors.email && fieldErrorClasses)}
-            placeholder={t.form.emailPlaceholder}
+            id="lastName"
+            name="lastName"
+            maxLength={fieldLimits.nameMax}
+            className={fieldClasses}
+            placeholder={t.form.lastNamePlaceholder}
           />
-          {clientErrors.email && (
-            <p id="email-error" className="mt-2 text-sm text-destructive" role="alert">
-              {clientErrors.email}
-            </p>
-          )}
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="email" className="mb-2 block text-xs uppercase tracking-[0.18em] text-primary">
+          {t.form.emailLabel}
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          maxLength={fieldLimits.emailMax}
+          aria-invalid={Boolean(clientErrors.email)}
+          aria-describedby={clientErrors.email ? 'email-error' : undefined}
+          className={cn(fieldClasses, clientErrors.email && fieldErrorClasses)}
+          placeholder={t.form.emailPlaceholder}
+        />
+        {clientErrors.email && (
+          <p id="email-error" className="mt-2 text-sm text-destructive" role="alert">
+            {clientErrors.email}
+          </p>
+        )}
       </div>
 
       <div>
@@ -235,16 +249,6 @@ export function ContactForm() {
           </p>
         )}
       </div>
-
-      <label className="flex items-center gap-3 text-sm text-muted-foreground">
-        <input
-          type="checkbox"
-          name="notify"
-          className="h-4 w-4 accent-primary"
-          defaultChecked
-        />
-        {t.form.notify}
-      </label>
 
       {turnstileSiteKey && (
         <>
