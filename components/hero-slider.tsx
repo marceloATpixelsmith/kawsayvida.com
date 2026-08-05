@@ -48,8 +48,8 @@ export function HeroSlider() {
               i === index ? 'scale-105' : 'scale-100',
             )}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/45 to-background/40" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/32 to-background/28" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/42 to-transparent" />
         </div>
       ))}
 

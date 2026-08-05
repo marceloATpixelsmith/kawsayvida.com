@@ -27,16 +27,46 @@ export function SiteFooter() {
               {t.footer.explore}
             </h3>
             <ul className="mt-5 space-y-3">
-              {navItems.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className="text-sm text-foreground/80 transition-colors hover:text-primary"
-                  >
-                    {t.nav[item.key]}
-                  </Link>
-                </li>
-              ))}
+              {navItems.flatMap((item) => {
+                const isExternal = 'external' in item && item.external
+                const children = 'children' in item ? item.children : undefined
+                const entries = [
+                  <li key={item.href}>
+                    {isExternal ? (
+                      <a
+                        href={item.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm text-foreground/80 transition-colors hover:text-primary"
+                      >
+                        {t.nav[item.key]}
+                      </a>
+                    ) : (
+                      <Link
+                        href={item.href}
+                        className="text-sm text-foreground/80 transition-colors hover:text-primary"
+                      >
+                        {t.nav[item.key]}
+                      </Link>
+                    )}
+                  </li>,
+                ]
+                if (children) {
+                  for (const child of children) {
+                    entries.push(
+                      <li key={child.href}>
+                        <Link
+                          href={child.href}
+                          className="text-sm text-foreground/80 transition-colors hover:text-primary"
+                        >
+                          {t.nav[child.key]}
+                        </Link>
+                      </li>,
+                    )
+                  }
+                }
+                return entries
+              })}
             </ul>
           </div>
 

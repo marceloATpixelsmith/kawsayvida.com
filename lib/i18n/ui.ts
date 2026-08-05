@@ -9,7 +9,6 @@ import type { Lang } from './config'
 export const ui = {
   en: {
     nav: {
-      home: 'Home',
       about: 'About Us',
       retreats: 'Retreats/Ceremonies',
       registration: 'Registration',
@@ -220,6 +219,9 @@ export const ui = {
       eyebrow: 'kawsayvida.com',
       title: 'Gallery',
       text: 'Glimpses of the retreat centers, ceremonial spaces, and sacred sites of the Sacred Valley, Perú and Valle de Bravo, México.',
+      close: 'Close',
+      prev: 'Previous photo',
+      next: 'Next photo',
     },
     contact: {
       eyebrow: 'Contact Us',
@@ -267,7 +269,6 @@ export const ui = {
       about: { eyebrow: 'German & Lupita', title: 'About Us' },
       retreats: { eyebrow: 'Deep Healing — Ayahuasca Medicine', title: 'Retreats' },
       registration: { eyebrow: 'Retreats/Ceremonies', title: 'Registration' },
-      medicineMusic: { eyebrow: 'German & Lupita', title: 'Medicine Music' },
       gallery: { eyebrow: 'kawsayvida.com', title: 'Gallery' },
       contact: { eyebrow: 'Reach Out', title: 'Contact Us' },
     },
@@ -280,7 +281,6 @@ export const ui = {
 
   es: {
     nav: {
-      home: 'Inicio',
       about: 'Nosotros',
       retreats: 'Retiros/Ceremonias',
       registration: 'Inscripciones',
@@ -489,6 +489,9 @@ export const ui = {
       eyebrow: 'kawsayvida.com',
       title: 'Galería',
       text: 'Vistazos de los centros de retiro, espacios ceremoniales y sitios sagrados del Valle Sagrado, Perú y Valle de Bravo, México.',
+      close: 'Cerrar',
+      prev: 'Foto anterior',
+      next: 'Foto siguiente',
     },
     contact: {
       eyebrow: 'Contáctanos',
@@ -535,7 +538,6 @@ export const ui = {
       about: { eyebrow: 'German y Lupita', title: 'Nosotros' },
       retreats: { eyebrow: 'Sanación Profunda — Medicina Ayahuasca', title: 'Retiros' },
       registration: { eyebrow: 'Retiros/Ceremonias', title: 'Inscripciones' },
-      medicineMusic: { eyebrow: 'German y Lupita', title: 'Música Medicina' },
       gallery: { eyebrow: 'kawsayvida.com', title: 'Galería' },
       contact: { eyebrow: 'Escríbenos', title: 'Contacto' },
     },

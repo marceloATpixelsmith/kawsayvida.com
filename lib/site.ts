@@ -16,14 +16,19 @@ export const siteConfig = {
 }
 
 // `key` maps to the localized label in lib/i18n/ui.ts (ui.<lang>.nav[key]).
-// Order and labels match the original kawsayvida.com main menu, with the
-// "Registration" sub-item of "Retreats/Ceremonies" surfaced as its own entry.
+// Order and labels match the original kawsayvida.com main menu. "Home" is
+// dropped from the menu itself (the logo links home instead), and
+// "Registration" is nested under "Retreats/Ceremonies" as a dropdown item,
+// matching the original site's structure. "Medicine Music" points to the
+// band's own site (ayahuapu.com) rather than a page on this site.
 export const navItems = [
-  { key: 'home', href: '/' },
   { key: 'about', href: '/about' },
-  { key: 'retreats', href: '/retreats' },
-  { key: 'registration', href: '/retreats/registration' },
-  { key: 'medicineMusic', href: '/medicine-music' },
+  {
+    key: 'retreats',
+    href: '/retreats',
+    children: [{ key: 'registration', href: '/retreats/registration' }],
+  },
+  { key: 'medicineMusic', href: 'https://www.ayahuapu.com/', external: true },
   { key: 'gallery', href: '/gallery' },
   { key: 'contact', href: '/contact' },
 ] as const

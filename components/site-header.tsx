@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X } from 'lucide-react'
+import { ChevronDown, Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { navItems, siteConfig } from '@/lib/site'
 import { LogoMark } from '@/components/logo-mark'
@@ -42,34 +42,84 @@ export function SiteHeader() {
         </Link>
 
         <div className="hidden items-center lg:flex">
-          <nav className="flex items-center gap-5 xl:gap-6">
+          <nav className="flex items-center gap-3.5 xl:gap-5">
             {navItems.map((item) => {
-              const active =
-                item.href === '/'
-                  ? pathname === '/'
-                  : pathname.startsWith(item.href)
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
+              const isExternal = 'external' in item && item.external
+              const children = 'children' in item ? item.children : undefined
+              const active = !isExternal && pathname.startsWith(item.href)
+              const linkClasses = cn(
+                'group relative flex items-center gap-1 text-[0.68rem] font-medium uppercase tracking-[0.16em] transition-colors whitespace-nowrap xl:text-xs xl:tracking-[0.2em]',
+                active ? 'text-primary' : 'text-foreground/80 hover:text-primary',
+              )
+              const underline = (
+                <span
                   className={cn(
-                    'group relative text-[0.68rem] font-medium uppercase tracking-[0.16em] transition-colors whitespace-nowrap xl:text-xs xl:tracking-[0.2em]',
-                    active ? 'text-primary' : 'text-foreground/80 hover:text-primary',
+                    'absolute -bottom-1.5 left-0 h-px bg-primary transition-all duration-300',
+                    active ? 'w-full' : 'w-0 group-hover:w-full',
                   )}
-                >
+                />
+              )
+
+              if (children && children.length > 0) {
+                return (
+                  <div key={item.href} className="group/dropdown relative py-2">
+                    <Link href={item.href} className={linkClasses}>
+                      {t.nav[item.key]}
+                      <ChevronDown className="h-3 w-3 transition-transform duration-200 group-hover/dropdown:rotate-180" />
+                      {underline}
+                    </Link>
+                    <div
+                      className={cn(
+                        'invisible absolute left-1/2 top-full -translate-x-1/2 pt-2 opacity-0 transition-[opacity,visibility] duration-150',
+                        'group-hover/dropdown:visible group-hover/dropdown:opacity-100 group-focus-within/dropdown:visible group-focus-within/dropdown:opacity-100',
+                      )}
+                    >
+                      <div className="min-w-[11rem] border border-border/60 bg-card/95 py-2 shadow-lg backdrop-blur-sm">
+                        {children.map((child) => (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            className={cn(
+                              'block whitespace-nowrap px-4 py-2.5 text-[0.68rem] uppercase tracking-[0.16em] transition-colors xl:text-xs',
+                              pathname.startsWith(child.href)
+                                ? 'text-primary'
+                                : 'text-foreground/80 hover:text-primary',
+                            )}
+                          >
+                            {t.nav[child.key]}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+
+              if (isExternal) {
+                return (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={linkClasses}
+                  >
+                    {t.nav[item.key]}
+                    {underline}
+                  </a>
+                )
+              }
+
+              return (
+                <Link key={item.href} href={item.href} className={linkClasses}>
                   {t.nav[item.key]}
-                  <span
-                    className={cn(
-                      'absolute -bottom-1.5 left-0 h-px bg-primary transition-all duration-300',
-                      active ? 'w-full' : 'w-0 group-hover:w-full',
-                    )}
-                  />
+                  {underline}
                 </Link>
               )
             })}
           </nav>
-          <span className="ml-6 h-4 w-px bg-border/60 xl:ml-8" aria-hidden="true" />
-          <LanguageToggle className="ml-6 xl:ml-8" />
+          <span className="ml-5 h-4 w-px bg-border/60 xl:ml-7" aria-hidden="true" />
+          <LanguageToggle className="ml-5 xl:ml-7" />
         </div>
 
         <button
@@ -92,15 +142,44 @@ export function SiteHeader() {
         )}
       >
         <nav className="flex flex-col px-6 py-4">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="border-b border-border/30 py-4 text-sm uppercase tracking-[0.22em] text-foreground/85 hover:text-primary"
-            >
-              {t.nav[item.key]}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const isExternal = 'external' in item && item.external
+            const children = 'children' in item ? item.children : undefined
+            return (
+              <div key={item.href} className="border-b border-border/30">
+                {isExternal ? (
+                  <a
+                    href={item.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block py-4 text-sm uppercase tracking-[0.22em] text-foreground/85 hover:text-primary"
+                  >
+                    {t.nav[item.key]}
+                  </a>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className="block py-4 text-sm uppercase tracking-[0.22em] text-foreground/85 hover:text-primary"
+                  >
+                    {t.nav[item.key]}
+                  </Link>
+                )}
+                {children && children.length > 0 && (
+                  <div className="flex flex-col pb-3 pl-4">
+                    {children.map((child) => (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        className="py-2 text-xs uppercase tracking-[0.2em] text-foreground/65 hover:text-primary"
+                      >
+                        {t.nav[child.key]}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
           <a
             href={`mailto:${siteConfig.email}`}
             className="border-b border-border/30 py-4 text-sm uppercase tracking-[0.22em] text-primary"
