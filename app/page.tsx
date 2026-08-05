@@ -121,13 +121,15 @@ export default function HomePage() {
               Ayahuapu
             </h2>
             <p className="mt-6 text-muted-foreground leading-relaxed">{t.medicineMusic.p2}</p>
-            <Link
-              href="/medicine-music"
+            <a
+              href="https://www.ayahuapu.com/"
+              target="_blank"
+              rel="noreferrer"
               className="group mt-8 inline-flex items-center gap-2 bg-primary px-8 py-3.5 text-xs uppercase tracking-[0.2em] text-primary-foreground transition-colors hover:bg-primary/90"
             >
               {t.home.viewEventDetails}
               <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </Link>
+            </a>
           </div>
         </div>
       </section>
