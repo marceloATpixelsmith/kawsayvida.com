@@ -11,8 +11,34 @@ import { cn } from '@/lib/utils'
 import { siteConfig } from '@/lib/site'
 import { useLanguage } from '@/lib/i18n/context'
 import type { UIStrings } from '@/lib/i18n/ui'
+import registrationDates from '@/data/registration-dates.json'
 
 const initialState: RegistrationState = { status: 'idle', code: '' }
+
+type RegistrationDate = {
+  id: string
+  startDate: string
+  endDate: string
+  label: {
+    en: string
+    es: string
+  }
+}
+
+//REGISTRATION OPTIONS REMAIN VISIBLE THROUGH THE FULL DAY AFTER AN EVENT ENDS.
+function isRegistrationDateVisible(event: RegistrationDate, now = new Date()): boolean {
+  const endDateParts = event.endDate.split('-').map(Number)
+
+  if (endDateParts.length !== 3 || endDateParts.some((part) => !Number.isInteger(part))) {
+    return false
+  }
+
+  const [year, month, day] = endDateParts
+  const hideAt = Date.UTC(year, month - 1, day + 2)
+
+  return now.getTime() < hideAt
+}
+
 
 const LIMITS = {
   textMax: 200,
@@ -214,6 +240,9 @@ export function RegistrationContent() {
   const [state, formAction] = useActionState(sendRegistration, initialState)
   const [clientErrors, setClientErrors] = useState<ClientErrors>({})
   const [turnstileToken, setTurnstileToken] = useState('')
+  const visibleRegistrationDates = (registrationDates as RegistrationDate[]).filter((event) =>
+    isRegistrationDateVisible(event),
+  )
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
   const turnstileRef = useRef<TurnstileWidgetHandle>(null)
 
@@ -398,12 +427,16 @@ export function RegistrationContent() {
                   clientErrors.retreatDate ? 'border-destructive' : 'border-border/60',
                 )}
               >
-                {r.retreatOptions.map((opt) => (
-                  <label key={opt} className="flex items-center gap-3 text-sm text-foreground/85">
-                    <input type="radio" name="retreatDate" value={opt} className="h-4 w-4 accent-primary" />
-                    {opt}
-                  </label>
-                ))}
+                {visibleRegistrationDates.map((event) => {
+                  const label = event.label[lang]
+
+                  return (
+                    <label key={event.id} className="flex items-center gap-3 text-sm text-foreground/85">
+                      <input type="radio" name="retreatDate" value={label} className="h-4 w-4 accent-primary" />
+                      {label}
+                    </label>
+                  )
+                })}
               </div>
               {clientErrors.retreatDate && (
                 <p className="text-sm text-destructive" role="alert">

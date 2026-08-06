@@ -1,0 +1,56 @@
+[
+  {
+    "id": "san-miguel-de-allende-july-2026",
+    "startDate": "2026-07-16",
+    "endDate": "2026-07-19",
+    "label": {
+      "en": "Retreat: July 16th to 19th, SMA",
+      "es": "Retiro: 16 al 19 de julio, SMA"
+    }
+  },
+  {
+    "id": "sacred-valley-august-2026",
+    "startDate": "2026-08-01",
+    "endDate": "2026-08-07",
+    "label": {
+      "en": "Retreat: August 1st to 7th, Valle Sagrado, Cusco Perú",
+      "es": "Retiro: 1 al 7 de agosto, Valle Sagrado, Cusco Perú"
+    }
+  },
+  {
+    "id": "valle-de-bravo-august-2026",
+    "startDate": "2026-08-22",
+    "endDate": "2026-08-22",
+    "label": {
+      "en": "Ceremony: August 22nd, Valle de Bravo (nighttime)",
+      "es": "Ceremonia: 22 de agosto, Valle de Bravo (nocturna)"
+    }
+  },
+  {
+    "id": "valle-de-bravo-september-2026",
+    "startDate": "2026-09-12",
+    "endDate": "2026-09-12",
+    "label": {
+      "en": "Ceremony: September 12th, Valle de Bravo (nighttime)",
+      "es": "Ceremonia: 12 de septiembre, Valle de Bravo (nocturna)"
+    }
+  },
+  {
+    "id": "valle-de-bravo-october-2026",
+    "startDate": "2026-10-15",
+    "endDate": "2026-10-18",
+    "label": {
+      "en": "Retreat: October 15th to 18th, Valle de Bravo, Khungi Espacio",
+      "es": "Retiro: 15 al 18 de octubre, Valle de Bravo, Espacio Khungi"
+    }
+  },
+  {
+    "id": "valle-de-bravo-december-2026",
+    "startDate": "2026-12-12",
+    "endDate": "2026-12-17",
+    "label": {
+      "en": "Retreat: December 12th to 17th, Valle de Bravo, Khungi Espacio",
+      "es": "Retiro: 12 al 17 de diciembre, Valle de Bravo, Espacio Khungi"
+    }
+  }
+]

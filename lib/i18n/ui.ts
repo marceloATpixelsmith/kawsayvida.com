@@ -115,14 +115,6 @@ export const ui = {
       emailHeading: 'New Retreat Registration',
       retreatSectionTitle: 'Retreat',
       dateOfRetreat: 'Date of Retreat',
-      retreatOptions: [
-        'Retreat: July 16th to 19th, SMA',
-        'Retreat: August 1st to 7th, Valle Sagrado, Cusco Perú',
-        'Ceremony: August 22nd, Valle de Bravo (nighttime)',
-        'Ceremony: September 12th, Valle de Bravo (nighttime)',
-        'Retreat: October 15th to 18th, Valle de Bravo, Khungi Espacio',
-        'Retreat: December 12th to 17th, Valle de Bravo, Khungi Espacio',
-      ],
       personalInfoTitle: 'Personal Info',
       fields: {
         paternalLastName: 'Paternal Last Name',
@@ -410,14 +402,6 @@ export const ui = {
       emailHeading: 'Nueva Inscripción de Retiro',
       retreatSectionTitle: 'Retiro',
       dateOfRetreat: 'Fecha de Retiro',
-      retreatOptions: [
-        'Retiro: 16 al 19 de julio, SMA',
-        'Retiro: 1 al 7 de agosto, Valle Sagrado, Cusco Perú',
-        'Ceremonia: 22 de agosto, Valle de Bravo (nocturna)',
-        'Ceremonia: 12 de septiembre, Valle de Bravo (nocturna)',
-        'Retiro: 15 al 18 de octubre, Valle de Bravo, Espacio Khungi',
-        'Retiro: 12 al 17 de diciembre, Valle de Bravo, Espacio Khungi',
-      ],
       personalInfoTitle: 'Datos Personales',
       fields: {
         paternalLastName: 'Apellido Paterno',
