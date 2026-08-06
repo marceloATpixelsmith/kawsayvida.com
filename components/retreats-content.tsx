@@ -83,15 +83,19 @@ export function RetreatsContent() {
                     {t.retreats.includesLabel}
                   </p>
                   <ul className="mt-4 space-y-3">
-                    {pick(retreat.includes, lang).map((line, idx) => (
+                    {pick(retreat.includes, lang).map((bullet, idx) => (
                       <li key={idx} className="flex gap-3 text-muted-foreground leading-relaxed">
                         <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                        <span>{line}</span>
+                        {bullet.html ? (
+                          <span dangerouslySetInnerHTML={{ __html: bullet.content }} />
+                        ) : (
+                          <span>{bullet.content}</span>
+                        )}
                       </li>
                     ))}
                   </ul>
                   <Link
-                    href="/retreats/registration"
+                    href={{ pathname: '/retreats/registration', query: { event: retreat.slug } }}
                     className="group mt-8 inline-flex items-center gap-2 bg-primary px-8 py-3.5 text-xs uppercase tracking-[0.2em] text-primary-foreground transition-colors hover:bg-primary/90"
                   >
                     {t.retreats.inquire}

@@ -19,6 +19,11 @@ type RegistrationDate = {
   id: string
   startDate: string
   endDate: string
+  type: 'retreat' | 'ceremony'
+  location: {
+    en: string
+    es: string
+  }
   label: {
     en: string
     es: string
@@ -39,6 +44,9 @@ function isRegistrationDateVisible(event: RegistrationDate, now = new Date()): b
   return now.getTime() < hideAt
 }
 
+const visibleRegistrationDates = (registrationDates as RegistrationDate[])
+  .filter((event) => isRegistrationDateVisible(event))
+  .sort((a, b) => a.startDate.localeCompare(b.startDate))
 
 const LIMITS = {
   textMax: 200,
@@ -240,11 +248,17 @@ export function RegistrationContent() {
   const [state, formAction] = useActionState(sendRegistration, initialState)
   const [clientErrors, setClientErrors] = useState<ClientErrors>({})
   const [turnstileToken, setTurnstileToken] = useState('')
-  const visibleRegistrationDates = (registrationDates as RegistrationDate[]).filter((event) =>
-    isRegistrationDateVisible(event),
-  )
+  const [selectedEventId, setSelectedEventId] = useState('')
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
   const turnstileRef = useRef<TurnstileWidgetHandle>(null)
+
+  //VALIDATE THE URL PARAMETER AGAINST THE CURRENTLY VISIBLE JSON EVENTS.
+  useEffect(() => {
+    const requestedEventId = new URLSearchParams(window.location.search).get('event') ?? ''
+    const isValidEvent = visibleRegistrationDates.some((event) => event.id === requestedEventId)
+
+    setSelectedEventId(isValidEvent ? requestedEventId : '')
+  }, [])
 
   // A 'challenge' error means the token was rejected outright. A 'generic'
   // error means the token passed Turnstile verification (which consumes it,
@@ -432,7 +446,14 @@ export function RegistrationContent() {
 
                   return (
                     <label key={event.id} className="flex items-center gap-3 text-sm text-foreground/85">
-                      <input type="radio" name="retreatDate" value={label} className="h-4 w-4 accent-primary" />
+                      <input
+                        type="radio"
+                        name="retreatDate"
+                        value={label}
+                        checked={selectedEventId === event.id}
+                        onChange={() => setSelectedEventId(event.id)}
+                        className="h-4 w-4 accent-primary"
+                      />
                       {label}
                     </label>
                   )
