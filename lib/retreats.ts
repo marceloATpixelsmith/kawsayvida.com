@@ -48,24 +48,24 @@ function standardBullets(event: EventData): Localized<RetreatBullet[]> {
   return {
     en: [
       { content: `Lodging (${nights} Nights, ${days} Days)`, html: false },
-      { content: 'All meals and beverages (Vegetarian)', html: false },
       {
         content: `${ceremonies} Ayahuasca Ceremonies (${nighttimeCeremonies} nighttime and 1 daytime)`,
         html: false,
       },
       ...custom.en.map((content) => ({ content, html: true })),
+      { content: 'All meals and beverages (Vegetarian)', html: false },
       { content: 'Tibetan meditation and yoga practices', html: false },
       { content: 'Group integration', html: false },
       { content: 'Individual sessions with retreat guides (as needed)', html: false },
     ],
     es: [
       { content: `Hospedaje (${nights} Noches, ${days} días)`, html: false },
-      { content: 'Todos los alimentos y bebidas (Dieta vegetariana)', html: false },
       {
         content: `${ceremonies} Ceremonias de Ayahuasca (${nighttimeCeremonies} nocturna${nighttimeCeremonies === 1 ? '' : 's'} y 1 diurna)`,
         html: false,
       },
       ...custom.es.map((content) => ({ content, html: true })),
+      { content: 'Todos los alimentos y bebidas (Dieta vegetariana)', html: false },
       { content: 'Prácticas de meditación y yoga tibetano', html: false },
       { content: 'Integraciones grupales', html: false },
       { content: 'Sesiones de uno a uno con los guías del retiro (si es necesario)', html: false },
