@@ -1,5 +1,5 @@
-import eventData from '@/data/registration-dates.json'
 import type { Localized } from './i18n/config'
+import { events, formatEventDates, type EventData } from './events'
 
 export type RetreatBullet = {
   content: string
@@ -15,22 +15,6 @@ export type Retreat = {
   image: string
   alt: Localized
   includes: Localized<RetreatBullet[]>
-}
-
-type RetreatEvent = {
-  id: string
-  type: 'retreat' | 'ceremony'
-  startDate: string
-  endDate: string
-  location: Localized
-  retreatPage?: {
-    title: Localized
-    dates: Localized
-    image: string
-    alt: Localized
-    food: Localized
-    customBulletsHtml: Localized<string[]>
-  }
 }
 
 //CALCULATE THE INCLUSIVE NUMBER OF RETREAT DAYS FROM ISO CALENDAR DATES.
@@ -51,7 +35,7 @@ function ceremonyCount(days: number): number {
   return days >= 6 ? 3 : 2
 }
 
-function standardBullets(event: RetreatEvent): Localized<RetreatBullet[]> {
+function standardBullets(event: EventData): Localized<RetreatBullet[]> {
   if (!event.retreatPage) {
     throw new Error(`Retreat page data is missing for ${event.id}`)
   }
@@ -59,12 +43,12 @@ function standardBullets(event: RetreatEvent): Localized<RetreatBullet[]> {
   const { days, nights } = retreatDuration(event.startDate, event.endDate)
   const ceremonies = ceremonyCount(days)
   const nighttimeCeremonies = ceremonies - 1
-  const custom = event.retreatPage.customBulletsHtml
+  const custom = event.retreatPage.customBulletsHtml ?? { en: [], es: [] }
 
   return {
     en: [
       { content: `Lodging (${nights} Nights, ${days} Days)`, html: false },
-      { content: event.retreatPage.food.en, html: false },
+      { content: 'All meals and beverages (Vegetarian)', html: false },
       {
         content: `${ceremonies} Ayahuasca Ceremonies (${nighttimeCeremonies} nighttime and 1 daytime)`,
         html: false,
@@ -76,7 +60,7 @@ function standardBullets(event: RetreatEvent): Localized<RetreatBullet[]> {
     ],
     es: [
       { content: `Hospedaje (${nights} Noches, ${days} días)`, html: false },
-      { content: event.retreatPage.food.es, html: false },
+      { content: 'Todos los alimentos y bebidas (Dieta vegetariana)', html: false },
       {
         content: `${ceremonies} Ceremonias de Ayahuasca (${nighttimeCeremonies} nocturna${nighttimeCeremonies === 1 ? '' : 's'} y 1 diurna)`,
         html: false,
@@ -90,7 +74,7 @@ function standardBullets(event: RetreatEvent): Localized<RetreatBullet[]> {
 }
 
 //ONLY EVENTS WITH RETREAT-PAGE CONTENT ARE LISTED, AND THE DATE CONTROLS THEIR ORDER.
-export const retreats: Retreat[] = (eventData as RetreatEvent[])
+export const retreats: Retreat[] = events
   .filter((event) => event.type === 'retreat' && Boolean(event.retreatPage))
   .sort((a, b) => a.startDate.localeCompare(b.startDate))
   .map((event) => {
@@ -103,9 +87,12 @@ export const retreats: Retreat[] = (eventData as RetreatEvent[])
     return {
       slug: event.id,
       startDate: event.startDate,
-      title: page.title,
-      location: event.location,
-      dates: page.dates,
+      title: { en: 'Offering to the Heart', es: 'Ofrenda al Corazón' },
+      location: { en: event.location, es: event.location },
+      dates: {
+        en: formatEventDates(event, 'en'),
+        es: formatEventDates(event, 'es'),
+      },
       image: page.image,
       alt: page.alt,
       includes: standardBullets(event),
