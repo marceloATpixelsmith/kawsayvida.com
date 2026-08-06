@@ -68,7 +68,7 @@ export function HeroSlider() {
             >
               {i === index && (
                 <>
-                  <p className="mb-5 text-xs uppercase tracking-luxe text-primary">
+                  <p className="mb-5 text-xs font-semibold uppercase tracking-luxe text-primary drop-shadow-[0_1px_3px_rgba(0,0,0,0.35)]">
                     {pick(slide.eyebrow, lang)}
                   </p>
                   <h1 className="font-serif text-5xl font-light leading-[1.05] text-balance text-foreground sm:text-6xl lg:text-7xl">
