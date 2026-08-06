@@ -1,11 +1,11 @@
 'use client'
 
-import Script from 'next/script'
 import type { ReactNode } from 'react'
-import { useActionState, useEffect, useState, type FormEvent } from 'react'
+import { useActionState, useEffect, useRef, useState, type FormEvent } from 'react'
 import { useFormStatus } from 'react-dom'
 import { Check, Send } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
+import { TurnstileWidget, type TurnstileWidgetHandle } from '@/components/turnstile-widget'
 import { sendRegistration, type RegistrationState, type RegistrationCode } from '@/app/retreats/registration/actions'
 import { cn } from '@/lib/utils'
 import { siteConfig } from '@/lib/site'
@@ -41,15 +41,6 @@ type FieldKey =
   | 'challenge'
 
 type ClientErrors = Partial<Record<FieldKey, string>>
-
-declare global {
-  interface Window {
-    turnstile?: { reset: (container?: string | HTMLElement) => void }
-    onRegistrationTurnstileVerified?: (token: string) => void
-    onRegistrationTurnstileExpired?: () => void
-    onRegistrationTurnstileError?: () => void
-  }
-}
 
 function messageForCode(code: RegistrationCode, t: UIStrings): string {
   const errors = t.registration.formErrors
@@ -224,18 +215,7 @@ export function RegistrationContent() {
   const [clientErrors, setClientErrors] = useState<ClientErrors>({})
   const [turnstileToken, setTurnstileToken] = useState('')
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
-
-  useEffect(() => {
-    if (!turnstileSiteKey) return
-    window.onRegistrationTurnstileVerified = (token: string) => setTurnstileToken(token)
-    window.onRegistrationTurnstileExpired = () => setTurnstileToken('')
-    window.onRegistrationTurnstileError = () => setTurnstileToken('')
-    return () => {
-      delete window.onRegistrationTurnstileVerified
-      delete window.onRegistrationTurnstileExpired
-      delete window.onRegistrationTurnstileError
-    }
-  }, [turnstileSiteKey])
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null)
 
   // A 'challenge' error means the token was rejected outright. A 'generic'
   // error means the token passed Turnstile verification (which consumes it,
@@ -243,15 +223,11 @@ export function RegistrationContent() {
   // token is used up either way, so both cases need a fresh widget before
   // the visitor can retry.
   useEffect(() => {
-    if (
-      state.status === 'error' &&
-      (state.code === 'challenge' || state.code === 'generic') &&
-      turnstileSiteKey
-    ) {
+    if (state.status === 'error' && (state.code === 'challenge' || state.code === 'generic')) {
       setTurnstileToken('')
-      window.turnstile?.reset()
+      turnstileRef.current?.reset()
     }
-  }, [state, turnstileSiteKey])
+  }, [state])
 
   function validateForm(event: FormEvent<HTMLFormElement>) {
     const fd = new FormData(event.currentTarget)
@@ -387,6 +363,28 @@ export function RegistrationContent() {
               className="hidden"
               aria-hidden="true"
             />
+
+            {/* Security check first, so a load failure is visible immediately
+                — before the visitor invests time filling out this long form. */}
+            {turnstileSiteKey && (
+              <div>
+                <TurnstileWidget
+                  ref={turnstileRef}
+                  siteKey={turnstileSiteKey}
+                  action="registration"
+                  onVerify={setTurnstileToken}
+                  onExpire={() => setTurnstileToken('')}
+                  label={t.security.label}
+                  loadingText={t.security.loading}
+                  loadErrorText={t.security.loadError}
+                />
+                {clientErrors.challenge && !turnstileToken && (
+                  <p className="mt-2 text-sm text-destructive" role="alert">
+                    {clientErrors.challenge}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Date of retreat */}
             <div className="space-y-4">
@@ -596,25 +594,6 @@ export function RegistrationContent() {
               </Field>
               <p className="text-sm text-muted-foreground">{r.signatureNote}</p>
             </div>
-
-            {turnstileSiteKey && (
-              <>
-                <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
-                <div
-                  className="cf-turnstile"
-                  data-sitekey={turnstileSiteKey}
-                  data-action="registration"
-                  data-callback="onRegistrationTurnstileVerified"
-                  data-expired-callback="onRegistrationTurnstileExpired"
-                  data-error-callback="onRegistrationTurnstileError"
-                />
-              </>
-            )}
-            {clientErrors.challenge && !turnstileToken && (
-              <p className="text-sm text-destructive" role="alert">
-                {clientErrors.challenge}
-              </p>
-            )}
 
             {state.status === 'error' && (
               <p className="text-sm text-destructive" role="alert">

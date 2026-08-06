@@ -17,6 +17,12 @@ export const ui = {
       contact: 'Contact Us',
     },
     language: { label: 'Language', en: 'EN', es: 'ES', english: 'English', spanish: 'Español' },
+    security: {
+      label: 'Security Check',
+      loading: 'Loading security check…',
+      loadError:
+        'The security check failed to load. Please disable any ad or content blockers and refresh the page.',
+    },
     hero: {
       exploreOfferings: 'View Retreats',
       upcomingEvents: 'Registration',
@@ -302,6 +308,12 @@ export const ui = {
       contact: 'Contacto',
     },
     language: { label: 'Idioma', en: 'EN', es: 'ES', english: 'English', spanish: 'Español' },
+    security: {
+      label: 'Verificación de Seguridad',
+      loading: 'Cargando verificación de seguridad…',
+      loadError:
+        'La verificación de seguridad no pudo cargar. Por favor deshabilita cualquier bloqueador de anuncios o contenido y actualiza la página.',
+    },
     hero: {
       exploreOfferings: 'Ver Retiros',
       upcomingEvents: 'Inscripciones',
