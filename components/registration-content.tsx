@@ -44,6 +44,9 @@ function isRegistrationDateVisible(event: RegistrationDate, now = new Date()): b
   return now.getTime() < hideAt
 }
 
+const visibleRegistrationDates = (registrationDates as RegistrationDate[])
+  .filter((event) => isRegistrationDateVisible(event))
+  .sort((a, b) => a.startDate.localeCompare(b.startDate))
 
 const LIMITS = {
   textMax: 200,
@@ -246,9 +249,6 @@ export function RegistrationContent() {
   const [clientErrors, setClientErrors] = useState<ClientErrors>({})
   const [turnstileToken, setTurnstileToken] = useState('')
   const [selectedEventId, setSelectedEventId] = useState('')
-  const visibleRegistrationDates = (registrationDates as RegistrationDate[])
-    .filter((event) => isRegistrationDateVisible(event))
-    .sort((a, b) => a.startDate.localeCompare(b.startDate))
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
   const turnstileRef = useRef<TurnstileWidgetHandle>(null)
 
