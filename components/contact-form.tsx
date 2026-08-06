@@ -1,10 +1,10 @@
 'use client'
 
-import Script from 'next/script'
-import { useActionState, useEffect, useState, type FormEvent } from 'react'
+import { useActionState, useEffect, useRef, useState, type FormEvent } from 'react'
 import { useFormStatus } from 'react-dom'
 import { Check, Send } from 'lucide-react'
 import { sendContactMessage, type ContactState, type ContactCode } from '@/app/contact/actions'
+import { TurnstileWidget, type TurnstileWidgetHandle } from '@/components/turnstile-widget'
 import { cn } from '@/lib/utils'
 import { siteConfig } from '@/lib/site'
 import { useLanguage } from '@/lib/i18n/context'
@@ -19,15 +19,6 @@ const fieldLimits = {
 }
 
 type ClientErrors = Partial<Record<'name' | 'email' | 'message' | 'challenge', string>>
-
-declare global {
-  interface Window {
-    turnstile?: { reset: (container?: string | HTMLElement) => void }
-    onTurnstileVerified?: (token: string) => void
-    onTurnstileExpired?: () => void
-    onTurnstileError?: () => void
-  }
-}
 
 // Map a server-returned code to a localized message.
 function messageForCode(code: ContactCode, t: UIStrings): string {
@@ -77,22 +68,7 @@ export function ContactForm() {
   const [clientErrors, setClientErrors] = useState<ClientErrors>({})
   const [turnstileToken, setTurnstileToken] = useState('')
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
-
-  // Turnstile verifies asynchronously (often after the widget mounts), so its
-  // result is tracked in state rather than read once from FormData at submit
-  // time — otherwise a submit click just before verification finishes leaves
-  // a stale "complete the challenge" error even after the widget succeeds.
-  useEffect(() => {
-    if (!turnstileSiteKey) return
-    window.onTurnstileVerified = (token: string) => setTurnstileToken(token)
-    window.onTurnstileExpired = () => setTurnstileToken('')
-    window.onTurnstileError = () => setTurnstileToken('')
-    return () => {
-      delete window.onTurnstileVerified
-      delete window.onTurnstileExpired
-      delete window.onTurnstileError
-    }
-  }, [turnstileSiteKey])
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null)
 
   // A 'challenge' error means the token was rejected outright. A 'generic'
   // error means the token passed Turnstile verification (which consumes it,
@@ -100,15 +76,11 @@ export function ContactForm() {
   // token is used up either way, so both cases need a fresh widget before
   // the visitor can retry.
   useEffect(() => {
-    if (
-      state.status === 'error' &&
-      (state.code === 'challenge' || state.code === 'generic') &&
-      turnstileSiteKey
-    ) {
+    if (state.status === 'error' && (state.code === 'challenge' || state.code === 'generic')) {
       setTurnstileToken('')
-      window.turnstile?.reset()
+      turnstileRef.current?.reset()
     }
-  }, [state, turnstileSiteKey])
+  }, [state])
 
   function validateForm(event: FormEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget)
@@ -176,6 +148,27 @@ export function ContactForm() {
         className="hidden"
         aria-hidden="true"
       />
+
+      {/* Security check first, so a load failure is visible immediately. */}
+      {turnstileSiteKey && (
+        <div>
+          <TurnstileWidget
+            ref={turnstileRef}
+            siteKey={turnstileSiteKey}
+            action="contact"
+            onVerify={setTurnstileToken}
+            onExpire={() => setTurnstileToken('')}
+            label={t.security.label}
+            loadingText={t.security.loading}
+            loadErrorText={t.security.loadError}
+          />
+          {clientErrors.challenge && !turnstileToken && (
+            <p className="mt-2 text-sm text-destructive" role="alert">
+              {clientErrors.challenge}
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
@@ -256,26 +249,6 @@ export function ContactForm() {
           </p>
         )}
       </div>
-
-      {turnstileSiteKey && (
-        <>
-          <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
-          <div
-            className="cf-turnstile"
-            data-sitekey={turnstileSiteKey}
-            data-action="turnstile-spin-v2"
-            data-callback="onTurnstileVerified"
-            data-expired-callback="onTurnstileExpired"
-            data-error-callback="onTurnstileError"
-          />
-        </>
-      )}
-
-      {clientErrors.challenge && !turnstileToken && (
-        <p className="text-sm text-destructive" role="alert">
-          {clientErrors.challenge}
-        </p>
-      )}
 
       {state.status === 'error' && (
         <p className="text-sm text-destructive" role="alert">
