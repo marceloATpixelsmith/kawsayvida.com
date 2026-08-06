@@ -1,14 +1,97 @@
 'use client'
 
+import Script from 'next/script'
 import type { ReactNode } from 'react'
+import { useActionState, useEffect, useState, type FormEvent } from 'react'
+import { useFormStatus } from 'react-dom'
+import { Check, Send } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
+import { sendRegistration, type RegistrationState, type RegistrationCode } from '@/app/retreats/registration/actions'
+import { cn } from '@/lib/utils'
 import { siteConfig } from '@/lib/site'
 import { useLanguage } from '@/lib/i18n/context'
+import type { UIStrings } from '@/lib/i18n/ui'
+
+const initialState: RegistrationState = { status: 'idle', code: '' }
+
+const LIMITS = {
+  textMax: 200,
+  longTextMax: 4000,
+  emailMax: 254,
+  minAge: 18,
+}
+
+type FieldKey =
+  | 'retreatDate'
+  | 'paternalLastName'
+  | 'names'
+  | 'dob'
+  | 'placeOfBirth'
+  | 'address'
+  | 'phone'
+  | 'email'
+  | 'maritalStatus'
+  | 'occupation'
+  | 'emergencyName'
+  | 'emergencyPhone'
+  | 'substanceUse'
+  | 'difficultyStopping'
+  | 'readDeclaration'
+  | 'signatureName'
+  | 'challenge'
+
+type ClientErrors = Partial<Record<FieldKey, string>>
+
+declare global {
+  interface Window {
+    turnstile?: { reset: (container?: string | HTMLElement) => void }
+    onRegistrationTurnstileVerified?: (token: string) => void
+    onRegistrationTurnstileExpired?: () => void
+    onRegistrationTurnstileError?: () => void
+  }
+}
+
+function messageForCode(code: RegistrationCode, t: UIStrings): string {
+  const errors = t.registration.formErrors
+  switch (code) {
+    case 'success':
+      return errors.success
+    case 'missing':
+      return errors.missing
+    case 'invalidEmail':
+      return errors.invalidEmail
+    case 'invalidDob':
+      return errors.invalidDob
+    case 'underage':
+      return errors.underage
+    case 'declarationRequired':
+      return errors.declarationRequired
+    case 'notConnected':
+      return errors.notConnected.replace('{email}', siteConfig.email)
+    case 'challenge':
+      return errors.challenge
+    case 'generic':
+      return errors.generic
+    default:
+      return ''
+  }
+}
 
 const fieldClasses =
   'w-full border border-input bg-background/40 px-4 py-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-primary'
+const fieldErrorClasses = 'border-destructive focus:border-destructive'
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: ReactNode }) {
+function Field({
+  label,
+  required,
+  error,
+  children,
+}: {
+  label: string
+  required?: boolean
+  error?: string
+  children: ReactNode
+}) {
   return (
     <div>
       <label className="mb-2 block text-xs uppercase tracking-[0.18em] text-primary">
@@ -16,16 +99,36 @@ function Field({ label, required, children }: { label: string; required?: boolea
         {required ? <span className="text-muted-foreground"> *</span> : null}
       </label>
       {children}
+      {error && (
+        <p className="mt-2 text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   )
 }
 
-function TextInput(props: { name: string; required?: boolean; type?: string }) {
-  return <input type={props.type ?? 'text'} name={props.name} required={props.required} className={fieldClasses} />
+function TextInput(props: {
+  name: string
+  required?: boolean
+  type?: string
+  error?: string
+  maxLength?: number
+}) {
+  return (
+    <input
+      type={props.type ?? 'text'}
+      name={props.name}
+      required={props.required}
+      maxLength={props.maxLength}
+      aria-invalid={Boolean(props.error)}
+      className={cn(fieldClasses, props.error && fieldErrorClasses)}
+    />
+  )
 }
 
 function TextArea({ name, rows = 3 }: { name: string; rows?: number }) {
-  return <textarea name={name} rows={rows} className={`${fieldClasses} resize-none`} />
+  return <textarea name={name} rows={rows} maxLength={LIMITS.longTextMax} className={`${fieldClasses} resize-none`} />
 }
 
 function RadioRow({ name, options }: { name: string; options: string[] }) {
@@ -37,6 +140,23 @@ function RadioRow({ name, options }: { name: string; options: string[] }) {
           {opt}
         </label>
       ))}
+    </div>
+  )
+}
+
+// Yes/No control with stable machine values ('yes' | 'no'), independent of
+// the visible (localized) label — used wherever the server checks the value.
+function YesNoRadio({ name, yesLabel, noLabel }: { name: string; yesLabel: string; noLabel: string }) {
+  return (
+    <div className="flex flex-wrap gap-6">
+      <label className="flex items-center gap-2 text-sm text-foreground/85">
+        <input type="radio" name={name} value="yes" className="h-4 w-4 accent-primary" />
+        {yesLabel}
+      </label>
+      <label className="flex items-center gap-2 text-sm text-foreground/85">
+        <input type="radio" name={name} value="no" className="h-4 w-4 accent-primary" />
+        {noLabel}
+      </label>
     </div>
   )
 }
@@ -62,9 +182,160 @@ function SectionTitle({ children }: { children: ReactNode }) {
   )
 }
 
+function SubmitButton({ label, sending }: { label: string; sending: string }) {
+  const { pending } = useFormStatus()
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="inline-flex items-center justify-center gap-2 bg-primary px-8 py-3.5 text-xs uppercase tracking-[0.2em] text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+    >
+      {pending ? sending : label}
+      <Send className="h-4 w-4" />
+    </button>
+  )
+}
+
+const isValidEmail = (email: string) =>
+  email.length <= LIMITS.emailMax && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)
+
+// Mirrors the server's ageFromDob() check in app/retreats/registration/actions.ts.
+function ageFromDob(dob: string): number | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dob)
+  if (!match) return null
+  const [, y, m, d] = match
+  const date = new Date(Number(y), Number(m) - 1, Number(d))
+  if (date.getFullYear() !== Number(y) || date.getMonth() !== Number(m) - 1 || date.getDate() !== Number(d)) {
+    return null
+  }
+  const now = new Date()
+  if (date.getTime() > now.getTime()) return null
+  let age = now.getFullYear() - date.getFullYear()
+  const hadBirthdayThisYear =
+    now.getMonth() > date.getMonth() || (now.getMonth() === date.getMonth() && now.getDate() >= date.getDate())
+  if (!hadBirthdayThisYear) age -= 1
+  return age
+}
+
 export function RegistrationContent() {
   const { t } = useLanguage()
   const r = t.registration
+  const [state, formAction] = useActionState(sendRegistration, initialState)
+  const [clientErrors, setClientErrors] = useState<ClientErrors>({})
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+
+  useEffect(() => {
+    if (!turnstileSiteKey) return
+    window.onRegistrationTurnstileVerified = (token: string) => setTurnstileToken(token)
+    window.onRegistrationTurnstileExpired = () => setTurnstileToken('')
+    window.onRegistrationTurnstileError = () => setTurnstileToken('')
+    return () => {
+      delete window.onRegistrationTurnstileVerified
+      delete window.onRegistrationTurnstileExpired
+      delete window.onRegistrationTurnstileError
+    }
+  }, [turnstileSiteKey])
+
+  // A 'challenge' error means the token was rejected outright. A 'generic'
+  // error means the token passed Turnstile verification (which consumes it,
+  // win or lose) but something failed afterwards (e.g. the Brevo send) — the
+  // token is used up either way, so both cases need a fresh widget before
+  // the visitor can retry.
+  useEffect(() => {
+    if (
+      state.status === 'error' &&
+      (state.code === 'challenge' || state.code === 'generic') &&
+      turnstileSiteKey
+    ) {
+      setTurnstileToken('')
+      window.turnstile?.reset()
+    }
+  }, [state, turnstileSiteKey])
+
+  function validateForm(event: FormEvent<HTMLFormElement>) {
+    const fd = new FormData(event.currentTarget)
+    const get = (key: string) => String(fd.get(key) ?? '').trim()
+    const errors: ClientErrors = {}
+    const fe = r.formErrors
+
+    if (!get('retreatDate')) errors.retreatDate = fe.fieldRequired
+    if (!get('paternalLastName')) errors.paternalLastName = fe.fieldRequired
+    if (!get('names')) errors.names = fe.fieldRequired
+
+    const dob = get('dob')
+    if (!dob) {
+      errors.dob = fe.fieldRequired
+    } else {
+      const age = ageFromDob(dob)
+      if (age === null) errors.dob = fe.invalidDob
+      else if (age < LIMITS.minAge) errors.dob = fe.underage
+    }
+
+    if (!get('placeOfBirth')) errors.placeOfBirth = fe.fieldRequired
+    if (!get('address')) errors.address = fe.fieldRequired
+    if (!get('phone')) errors.phone = fe.fieldRequired
+
+    const email = get('email')
+    if (email && !isValidEmail(email)) errors.email = fe.invalidEmail
+
+    if (!get('maritalStatus')) errors.maritalStatus = fe.fieldRequired
+    if (!get('occupation')) errors.occupation = fe.fieldRequired
+    if (!get('emergencyName')) errors.emergencyName = fe.fieldRequired
+    if (!get('emergencyPhone')) errors.emergencyPhone = fe.fieldRequired
+    if (!get('substanceUse')) errors.substanceUse = fe.fieldRequired
+    if (!get('difficultyStopping')) errors.difficultyStopping = fe.fieldRequired
+
+    const readDeclaration = get('readDeclaration')
+    if (!readDeclaration) errors.readDeclaration = fe.fieldRequired
+    else if (readDeclaration !== 'yes') errors.readDeclaration = fe.declarationRequired
+
+    if (!get('signatureName')) errors.signatureName = fe.fieldRequired
+
+    if (turnstileSiteKey && !turnstileToken) errors.challenge = fe.challenge
+
+    setClientErrors(errors)
+
+    if (Object.keys(errors).length > 0) {
+      event.preventDefault()
+      // Bring the visitor to the first invalid field.
+      const firstKey = Object.keys(errors)[0]
+      if (firstKey && firstKey !== 'challenge') {
+        document.querySelector<HTMLElement>(`[name="${firstKey}"]`)?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        })
+      }
+    }
+  }
+
+  if (state.status === 'success') {
+    return (
+      <>
+        <PageHeader
+          eyebrow={t.pageHeaders.registration.eyebrow}
+          title={t.pageHeaders.registration.title}
+          image="/images/registration-header.jpg"
+          alt={t.about.headerAlt}
+        />
+        <section className="bg-background py-20 lg:py-28">
+          <div className="mx-auto max-w-xl px-6 lg:px-10">
+            <div className="flex flex-col items-center border border-primary/40 bg-primary/5 p-12 text-center">
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-primary">
+                <Check className="h-7 w-7" />
+              </span>
+              <h3 className="mt-6 font-serif text-2xl font-light text-foreground">
+                {r.formErrors.successTitle}
+              </h3>
+              <p className="mt-3 max-w-sm text-muted-foreground leading-relaxed">
+                {messageForCode(state.code, t)}
+              </p>
+            </div>
+          </div>
+        </section>
+      </>
+    )
+  }
 
   return (
     <>
@@ -106,13 +377,28 @@ export function RegistrationContent() {
         <div className="mx-auto max-w-3xl px-6 lg:px-10">
           <SectionTitle>{r.formTitle}</SectionTitle>
 
-          <form onSubmit={(e) => e.preventDefault()} className="mt-10 space-y-14" noValidate>
+          <form action={formAction} onSubmit={validateForm} className="mt-10 space-y-14" noValidate>
+            {/* Honeypot */}
+            <input
+              type="text"
+              name="company"
+              tabIndex={-1}
+              autoComplete="off"
+              className="hidden"
+              aria-hidden="true"
+            />
+
             {/* Date of retreat */}
             <div className="space-y-4">
               <p className="text-xs uppercase tracking-[0.18em] text-primary">
                 {r.dateOfRetreat} <span className="text-muted-foreground">*</span>
               </p>
-              <div className="space-y-3 border border-border/60 bg-background/40 p-6">
+              <div
+                className={cn(
+                  'space-y-3 border bg-background/40 p-6',
+                  clientErrors.retreatDate ? 'border-destructive' : 'border-border/60',
+                )}
+              >
                 {r.retreatOptions.map((opt) => (
                   <label key={opt} className="flex items-center gap-3 text-sm text-foreground/85">
                     <input type="radio" name="retreatDate" value={opt} className="h-4 w-4 accent-primary" />
@@ -120,42 +406,47 @@ export function RegistrationContent() {
                   </label>
                 ))}
               </div>
+              {clientErrors.retreatDate && (
+                <p className="text-sm text-destructive" role="alert">
+                  {clientErrors.retreatDate}
+                </p>
+              )}
             </div>
 
             {/* Personal info */}
             <div className="space-y-6">
               <p className="text-xs uppercase tracking-[0.18em] text-primary">{r.personalInfoTitle}</p>
               <div className="grid gap-5 sm:grid-cols-2">
-                <Field label={r.fields.paternalLastName} required>
-                  <TextInput name="paternalLastName" required />
+                <Field label={r.fields.paternalLastName} required error={clientErrors.paternalLastName}>
+                  <TextInput name="paternalLastName" required maxLength={LIMITS.textMax} error={clientErrors.paternalLastName} />
                 </Field>
                 <Field label={r.fields.maternalLastName}>
-                  <TextInput name="maternalLastName" />
+                  <TextInput name="maternalLastName" maxLength={LIMITS.textMax} />
                 </Field>
-                <Field label={r.fields.names} required>
-                  <TextInput name="names" required />
+                <Field label={r.fields.names} required error={clientErrors.names}>
+                  <TextInput name="names" required maxLength={LIMITS.textMax} error={clientErrors.names} />
                 </Field>
-                <Field label={r.fields.dob} required>
-                  <TextInput name="dob" type="date" required />
+                <Field label={r.fields.dob} required error={clientErrors.dob}>
+                  <TextInput name="dob" type="date" required error={clientErrors.dob} />
                 </Field>
-                <Field label={r.fields.placeOfBirth} required>
-                  <TextInput name="placeOfBirth" required />
+                <Field label={r.fields.placeOfBirth} required error={clientErrors.placeOfBirth}>
+                  <TextInput name="placeOfBirth" required maxLength={LIMITS.textMax} error={clientErrors.placeOfBirth} />
                 </Field>
-                <Field label={r.fields.phone} required>
-                  <TextInput name="phone" type="tel" required />
+                <Field label={r.fields.phone} required error={clientErrors.phone}>
+                  <TextInput name="phone" type="tel" required maxLength={LIMITS.textMax} error={clientErrors.phone} />
                 </Field>
-                <Field label={r.fields.email}>
-                  <TextInput name="email" type="email" />
+                <Field label={r.fields.email} error={clientErrors.email}>
+                  <TextInput name="email" type="email" maxLength={LIMITS.emailMax} error={clientErrors.email} />
                 </Field>
                 <Field label={r.fields.passport}>
-                  <TextInput name="passport" />
+                  <TextInput name="passport" maxLength={LIMITS.textMax} />
                 </Field>
-                <Field label={r.fields.occupation} required>
-                  <TextInput name="occupation" required />
+                <Field label={r.fields.occupation} required error={clientErrors.occupation}>
+                  <TextInput name="occupation" required maxLength={LIMITS.textMax} error={clientErrors.occupation} />
                 </Field>
               </div>
-              <Field label={r.fields.address} required>
-                <TextInput name="address" required />
+              <Field label={r.fields.address} required error={clientErrors.address}>
+                <TextInput name="address" required maxLength={LIMITS.longTextMax} error={clientErrors.address} />
               </Field>
               <div>
                 <label className="mb-2 block text-xs uppercase tracking-[0.18em] text-primary">
@@ -165,13 +456,18 @@ export function RegistrationContent() {
                   name="maritalStatus"
                   options={[r.fields.married, r.fields.single, r.fields.divorced]}
                 />
+                {clientErrors.maritalStatus && (
+                  <p className="mt-2 text-sm text-destructive" role="alert">
+                    {clientErrors.maritalStatus}
+                  </p>
+                )}
               </div>
               <div className="grid gap-5 sm:grid-cols-2">
-                <Field label={r.fields.emergencyName} required>
-                  <TextInput name="emergencyName" required />
+                <Field label={r.fields.emergencyName} required error={clientErrors.emergencyName}>
+                  <TextInput name="emergencyName" required maxLength={LIMITS.textMax} error={clientErrors.emergencyName} />
                 </Field>
-                <Field label={r.fields.emergencyPhone} required>
-                  <TextInput name="emergencyPhone" type="tel" required />
+                <Field label={r.fields.emergencyPhone} required error={clientErrors.emergencyPhone}>
+                  <TextInput name="emergencyPhone" type="tel" required maxLength={LIMITS.textMax} error={clientErrors.emergencyPhone} />
                 </Field>
               </div>
             </div>
@@ -192,19 +488,19 @@ export function RegistrationContent() {
               <CheckboxGrid name="conditions" options={r.conditions} />
 
               <Field label={r.healthQuestions.psychiatricDisorders}>
-                <TextInput name="psychiatricDisorders" />
+                <TextInput name="psychiatricDisorders" maxLength={LIMITS.textMax} />
               </Field>
               <Field label={r.healthQuestions.allergies}>
-                <TextInput name="allergies" />
+                <TextInput name="allergies" maxLength={LIMITS.textMax} />
               </Field>
               <Field label={r.healthQuestions.otherDiseases}>
-                <TextInput name="otherDiseases" />
+                <TextInput name="otherDiseases" maxLength={LIMITS.textMax} />
               </Field>
               <Field label={r.healthQuestions.currentTreatment}>
-                <TextInput name="currentTreatment" />
+                <TextInput name="currentTreatment" maxLength={LIMITS.textMax} />
               </Field>
               <Field label={r.healthQuestions.medications}>
-                <TextInput name="medications" />
+                <TextInput name="medications" maxLength={LIMITS.textMax} />
               </Field>
 
               <div>
@@ -212,9 +508,14 @@ export function RegistrationContent() {
                   {r.healthQuestions.substanceUse} <span className="text-muted-foreground">*</span>
                 </p>
                 <RadioRow name="substanceUse" options={[r.healthQuestions.yes, r.healthQuestions.no]} />
+                {clientErrors.substanceUse && (
+                  <p className="mt-2 text-sm text-destructive" role="alert">
+                    {clientErrors.substanceUse}
+                  </p>
+                )}
               </div>
               <Field label={r.healthQuestions.substanceFrequency}>
-                <TextInput name="substanceFrequency" />
+                <TextInput name="substanceFrequency" maxLength={LIMITS.textMax} />
               </Field>
               <div>
                 <p className="mb-2 text-xs uppercase tracking-[0.18em] text-primary">
@@ -224,13 +525,18 @@ export function RegistrationContent() {
                   name="difficultyStopping"
                   options={[r.healthQuestions.yes, r.healthQuestions.no]}
                 />
+                {clientErrors.difficultyStopping && (
+                  <p className="mt-2 text-sm text-destructive" role="alert">
+                    {clientErrors.difficultyStopping}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-3">
                 <p className="text-xs uppercase tracking-[0.18em] text-primary">{r.experiencesTitle}</p>
                 <CheckboxGrid name="experiences" options={r.experiences.slice(0, -1)} />
                 <Field label={r.experiences[r.experiences.length - 1]}>
-                  <TextInput name="experienceFrequency" />
+                  <TextInput name="experienceFrequency" maxLength={LIMITS.textMax} />
                 </Field>
               </div>
             </div>
@@ -243,7 +549,7 @@ export function RegistrationContent() {
                 <CheckboxGrid name="ritual" options={r.ritualOptions} />
               </div>
               <Field label={r.ritualOtherLabel}>
-                <TextInput name="ritualOther" />
+                <TextInput name="ritualOther" maxLength={LIMITS.textMax} />
               </Field>
               <Field label={r.experienceQuestions.howWasIt}>
                 <TextArea name="ritualExperience" />
@@ -273,28 +579,51 @@ export function RegistrationContent() {
                 <p className="mb-2 text-xs uppercase tracking-[0.18em] text-primary">
                   {r.readDeclaration} <span className="text-muted-foreground">*</span>
                 </p>
-                <RadioRow
+                <YesNoRadio
                   name="readDeclaration"
-                  options={[r.healthQuestions.yes, r.healthQuestions.no]}
+                  yesLabel={r.healthQuestions.yes}
+                  noLabel={r.healthQuestions.no}
                 />
+                {clientErrors.readDeclaration && (
+                  <p className="mt-2 text-sm text-destructive" role="alert">
+                    {clientErrors.readDeclaration}
+                  </p>
+                )}
               </div>
 
-              <Field label={r.fullName} required>
-                <TextInput name="signatureName" required />
+              <Field label={r.fullName} required error={clientErrors.signatureName}>
+                <TextInput name="signatureName" required maxLength={LIMITS.textMax} error={clientErrors.signatureName} />
               </Field>
               <p className="text-sm text-muted-foreground">{r.signatureNote}</p>
             </div>
 
-            <div className="border-t border-border/50 pt-8">
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center gap-2 bg-primary px-8 py-3.5 text-xs uppercase tracking-[0.2em] text-primary-foreground transition-colors hover:bg-primary/90"
-              >
-                {r.submit}
-              </button>
-              <p className="mt-4 max-w-xl text-sm text-muted-foreground leading-relaxed">
-                {r.draftNotice.replace('{email}', siteConfig.email)}
+            {turnstileSiteKey && (
+              <>
+                <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
+                <div
+                  className="cf-turnstile"
+                  data-sitekey={turnstileSiteKey}
+                  data-action="registration"
+                  data-callback="onRegistrationTurnstileVerified"
+                  data-expired-callback="onRegistrationTurnstileExpired"
+                  data-error-callback="onRegistrationTurnstileError"
+                />
+              </>
+            )}
+            {clientErrors.challenge && !turnstileToken && (
+              <p className="text-sm text-destructive" role="alert">
+                {clientErrors.challenge}
               </p>
+            )}
+
+            {state.status === 'error' && (
+              <p className="text-sm text-destructive" role="alert">
+                {messageForCode(state.code, t)}
+              </p>
+            )}
+
+            <div className="border-t border-border/50 pt-8">
+              <SubmitButton label={r.submit} sending={r.sending} />
             </div>
           </form>
         </div>
