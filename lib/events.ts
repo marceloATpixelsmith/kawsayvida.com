@@ -44,7 +44,7 @@ const SPANISH_MONTHS = [
   'diciembre',
 ]
 
-export const events = eventData as EventData[]
+export const events = eventData as unknown as EventData[]
 
 type DateParts = {
   year: number
