@@ -237,8 +237,17 @@ export function RegistrationContent() {
     }
   }, [turnstileSiteKey])
 
+  // A 'challenge' error means the token was rejected outright. A 'generic'
+  // error means the token passed Turnstile verification (which consumes it,
+  // win or lose) but something failed afterwards (e.g. the Brevo send) — the
+  // token is used up either way, so both cases need a fresh widget before
+  // the visitor can retry.
   useEffect(() => {
-    if (state.status === 'error' && state.code === 'challenge' && turnstileSiteKey) {
+    if (
+      state.status === 'error' &&
+      (state.code === 'challenge' || state.code === 'generic') &&
+      turnstileSiteKey
+    ) {
       setTurnstileToken('')
       window.turnstile?.reset()
     }
