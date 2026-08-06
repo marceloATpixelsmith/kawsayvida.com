@@ -21,7 +21,9 @@ export function PageHeader({ eyebrow, title, image, alt }: PageHeaderProps) {
       <div className="absolute inset-0 bg-gradient-to-t from-background/82 via-background/40 to-background/20" />
       <div className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-8 lg:px-10 lg:pb-14">
         {eyebrow ? (
-          <p className="mb-4 text-xs uppercase tracking-luxe text-primary">{eyebrow}</p>
+          <p className="mb-4 text-xs font-semibold uppercase tracking-luxe text-primary drop-shadow-[0_1px_3px_rgba(0,0,0,0.35)]">
+            {eyebrow}
+          </p>
         ) : null}
         <h1 className="font-serif text-5xl font-light leading-none text-balance text-foreground sm:text-6xl lg:text-7xl">
           {title}
