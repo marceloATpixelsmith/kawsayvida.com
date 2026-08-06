@@ -4,45 +4,19 @@
     "type": "retreat",
     "startDate": "2026-07-16",
     "endDate": "2026-07-19",
-    "location": {
-      "en": "San Miguel de Allende, México",
-      "es": "San Miguel de Allende, México"
-    },
-    "label": {
-      "en": "Retreat: July 16th to 19th, SMA",
-      "es": "Retiro: 16 al 19 de julio, SMA"
-    }
+    "location": "San Miguel de Allende, México"
   },
   {
     "id": "sacred-valley-august-2026",
     "type": "retreat",
     "startDate": "2026-08-01",
     "endDate": "2026-08-07",
-    "location": {
-      "en": "Sacred Valley, Perú",
-      "es": "Valle Sagrado, Perú"
-    },
-    "label": {
-      "en": "Retreat: August 1st to 7th, Valle Sagrado, Cusco Perú",
-      "es": "Retiro: 1 al 7 de agosto, Valle Sagrado, Cusco Perú"
-    },
+    "location": "Valle Sagrado, Cusco, Perú",
     "retreatPage": {
-      "title": {
-        "en": "Offering to the Heart",
-        "es": "Ofrenda al Corazón"
-      },
-      "dates": {
-        "en": "August 1st to 7th, 2026",
-        "es": "1 al 7 de agosto, 2026"
-      },
       "image": "/images/retreat-sacred-valley.jpg",
       "alt": {
         "en": "A stone terrace overlooking the Sacred Valley near Cusco, Perú",
         "es": "Una terraza de piedra con vista al Valle Sagrado cerca de Cusco, Perú"
-      },
-      "food": {
-        "en": "All meals and beverages (Vegetarian)",
-        "es": "Todos los alimentos y bebidas (Dieta vegetariana)"
       },
       "customBulletsHtml": {
         "en": [
@@ -59,59 +33,26 @@
     "type": "ceremony",
     "startDate": "2026-08-22",
     "endDate": "2026-08-22",
-    "location": {
-      "en": "Valle de Bravo, México",
-      "es": "Valle de Bravo, México"
-    },
-    "label": {
-      "en": "Ceremony: August 22nd, Valle de Bravo (nighttime)",
-      "es": "Ceremonia: 22 de agosto, Valle de Bravo (nocturna)"
-    }
+    "location": "Valle de Bravo, México"
   },
   {
     "id": "valle-de-bravo-september-2026",
     "type": "ceremony",
     "startDate": "2026-09-12",
     "endDate": "2026-09-12",
-    "location": {
-      "en": "Valle de Bravo, México",
-      "es": "Valle de Bravo, México"
-    },
-    "label": {
-      "en": "Ceremony: September 12th, Valle de Bravo (nighttime)",
-      "es": "Ceremonia: 12 de septiembre, Valle de Bravo (nocturna)"
-    }
+    "location": "Valle de Bravo, México"
   },
   {
     "id": "valle-de-bravo-october-2026",
     "type": "retreat",
     "startDate": "2026-10-15",
     "endDate": "2026-10-18",
-    "location": {
-      "en": "Espacio Khungi, Valle de Bravo",
-      "es": "Espacio Khungi, Valle de Bravo"
-    },
-    "label": {
-      "en": "Retreat: October 15th to 18th, Valle de Bravo, Khungi Espacio",
-      "es": "Retiro: 15 al 18 de octubre, Valle de Bravo, Espacio Khungi"
-    },
+    "location": "Espacio Khungi, Valle de Bravo",
     "retreatPage": {
-      "title": {
-        "en": "Offering to the Heart",
-        "es": "Ofrenda al Corazón"
-      },
-      "dates": {
-        "en": "October 15th to 18th, 2026",
-        "es": "15 al 18 de octubre, 2026"
-      },
       "image": "/images/retreat-valle-de-bravo-oct.jpg",
       "alt": {
         "en": "A ceremonial retreat house in Valle de Bravo, México, surrounded by pines",
         "es": "Una casa de retiro ceremonial en Valle de Bravo, México, rodeada de pinos"
-      },
-      "food": {
-        "en": "All meals and beverages (Organic vegetarian)",
-        "es": "Todos los alimentos y bebidas (Dieta vegetariana orgánica)"
       },
       "customBulletsHtml": {
         "en": [],
@@ -124,31 +65,12 @@
     "type": "retreat",
     "startDate": "2026-12-12",
     "endDate": "2026-12-17",
-    "location": {
-      "en": "Espacio Khungi, Valle de Bravo",
-      "es": "Espacio Khungi, Valle de Bravo"
-    },
-    "label": {
-      "en": "Retreat: December 12th to 17th, Valle de Bravo, Khungi Espacio",
-      "es": "Retiro: 12 al 17 de diciembre, Valle de Bravo, Espacio Khungi"
-    },
+    "location": "Espacio Khungi, Valle de Bravo",
     "retreatPage": {
-      "title": {
-        "en": "Offering to the Heart",
-        "es": "Ofrenda al Corazón"
-      },
-      "dates": {
-        "en": "December 12th to 17th, 2026",
-        "es": "12 al 17 de diciembre, 2026"
-      },
       "image": "/images/retreat-valle-de-bravo-dec.jpg",
       "alt": {
         "en": "Candlelight and offerings arranged for an Ayahuasca ceremony",
         "es": "Velas y ofrendas dispuestas para una ceremonia de Ayahuasca"
-      },
-      "food": {
-        "en": "All meals and beverages (Organic vegetarian)",
-        "es": "Todos los alimentos y bebidas (Dieta vegetariana orgánica)"
       },
       "customBulletsHtml": {
         "en": [],
