@@ -8,8 +8,6 @@ export type EventData = {
   endDate: string
   location: string
   retreatPage?: {
-    image: string
-    alt: Localized
     customBulletsHtml?: Localized<string[]>
   }
 }
