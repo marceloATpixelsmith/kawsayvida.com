@@ -1,6 +1,7 @@
 'use server'
 
 import { siteConfig } from '@/lib/site'
+import { verifyTurnstileToken } from '@/lib/turnstile'
 
 // The UI is bilingual, so the action returns a stable `code` instead of a
 // hard-coded sentence. The client (contact-form.tsx) maps the code to the
@@ -21,11 +22,6 @@ export type ContactState = {
   code: ContactCode
 }
 
-type TurnstileResponse = {
-  success: boolean
-  'error-codes'?: string[]
-}
-
 type BrevoError = {
   code?: string
   message?: string
@@ -40,50 +36,6 @@ const CONTACT_LIMITS = {
 
 function isValidEmail(email: string): boolean {
   return email.length <= CONTACT_LIMITS.emailMax && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)
-}
-
-async function verifyTurnstileToken(token: string): Promise<boolean> {
-  const secretKey = process.env.TURNSTILE_SECRET_KEY
-
-  if (!secretKey) {
-    console.log('[v0] Contact form Turnstile secret is not configured.')
-    return false
-  }
-
-  const body = new URLSearchParams()
-  body.append('secret', secretKey)
-  body.append('response', token)
-
-  try {
-    const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/x-www-form-urlencoded',
-      },
-      body: body.toString(),
-    })
-
-    if (!response.ok) {
-      console.log('[v0] Turnstile verification request failed:', response.status)
-      return false
-    }
-
-    const result = (await response.json()) as TurnstileResponse
-
-    if (!result || typeof result.success !== 'boolean') {
-      console.log('[v0] Turnstile verification returned malformed data.')
-      return false
-    }
-
-    if (!result.success) {
-      console.log('[v0] Turnstile verification failed:', result['error-codes'])
-    }
-
-    return result.success
-  } catch (err) {
-    console.log('[v0] Contact form Turnstile verification exception:', err)
-    return false
-  }
 }
 
 export async function sendContactMessage(
@@ -158,7 +110,7 @@ export async function sendContactMessage(
           name: 'kawsayvida.com Contact Form',
           email: senderEmail,
         },
-        to: [{ email: siteConfig.email }],
+        to: [{ email: siteConfig.notificationEmail }],
         replyTo: {
           email,
           name,
