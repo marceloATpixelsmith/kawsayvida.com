@@ -11,41 +11,12 @@ import { cn } from '@/lib/utils'
 import { siteConfig } from '@/lib/site'
 import { useLanguage } from '@/lib/i18n/context'
 import type { UIStrings } from '@/lib/i18n/ui'
-import registrationDates from '@/data/registration-dates.json'
+import { events, eventRegistrationLabel, isEventRegistrationVisible } from '@/lib/events'
 
 const initialState: RegistrationState = { status: 'idle', code: '' }
 
-type RegistrationDate = {
-  id: string
-  startDate: string
-  endDate: string
-  type: 'retreat' | 'ceremony'
-  location: {
-    en: string
-    es: string
-  }
-  label: {
-    en: string
-    es: string
-  }
-}
-
-//REGISTRATION OPTIONS REMAIN VISIBLE THROUGH THE FULL DAY AFTER AN EVENT ENDS.
-function isRegistrationDateVisible(event: RegistrationDate, now = new Date()): boolean {
-  const endDateParts = event.endDate.split('-').map(Number)
-
-  if (endDateParts.length !== 3 || endDateParts.some((part) => !Number.isInteger(part))) {
-    return false
-  }
-
-  const [year, month, day] = endDateParts
-  const hideAt = Date.UTC(year, month - 1, day + 2)
-
-  return now.getTime() < hideAt
-}
-
-const visibleRegistrationDates = (registrationDates as RegistrationDate[])
-  .filter((event) => isRegistrationDateVisible(event))
+const visibleRegistrationDates = events
+  .filter((event) => isEventRegistrationVisible(event))
   .sort((a, b) => a.startDate.localeCompare(b.startDate))
 
 const LIMITS = {
@@ -442,7 +413,7 @@ export function RegistrationContent() {
                 )}
               >
                 {visibleRegistrationDates.map((event) => {
-                  const label = event.label[lang]
+                  const label = eventRegistrationLabel(event, lang)
 
                   return (
                     <label key={event.id} className="flex items-center gap-3 text-sm text-foreground/85">
