@@ -14,7 +14,7 @@ export function AboutContent() {
       <PageHeader
         eyebrow={t.pageHeaders.about.eyebrow}
         title={t.pageHeaders.about.title}
-        image="/images/hero-retreats.jpg"
+        image="/images/about-portrait.jpg"
         alt={t.about.headerAlt}
       />
 
@@ -25,12 +25,12 @@ export function AboutContent() {
             <p>{t.about.introP2}</p>
           </div>
 
-          <div className="relative mx-auto aspect-[4/5] w-full overflow-hidden border border-border/60 lg:mx-0 lg:w-1/2 lg:justify-self-end">
+          <div className="relative mx-auto aspect-square w-full max-w-sm overflow-hidden border border-border/60 lg:mx-0 lg:w-full lg:justify-self-end">
             <Image
-              src="/images/about-portrait.jpg"
-              alt={t.about.portraitAlt}
+              src="/images/about-embrace.jpg"
+              alt={t.about.embraceAlt}
               fill
-              sizes="(min-width: 1024px) 17vw, 100vw"
+              sizes="(min-width: 1024px) 24vw, 100vw"
               className="object-cover"
             />
           </div>
@@ -40,7 +40,7 @@ export function AboutContent() {
       {/* Ayahuapu — Medicine Music */}
       <section className="border-t border-border/50 bg-card py-20 lg:py-28">
         <div className="mx-auto grid max-w-7xl items-center gap-14 px-6 lg:grid-cols-2 lg:gap-20 lg:px-10">
-          <div className="relative order-2 aspect-[5/6] w-full overflow-hidden border border-border/60 lg:order-1">
+          <div className="relative order-2 aspect-[16/9] w-full overflow-hidden border border-border/60 lg:order-1">
             <Image
               src="/images/about-ayahuapu.jpg"
               alt={t.about.samaAlt}

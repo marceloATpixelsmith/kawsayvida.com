@@ -19,7 +19,7 @@ export default function HomePage() {
       {/* Intro / philosophy */}
       <section className="bg-background py-24 lg:py-32">
         <div className="mx-auto grid max-w-7xl items-center gap-14 px-6 lg:grid-cols-2 lg:gap-20 lg:px-10">
-          <div className="relative aspect-[4/5] w-full overflow-hidden">
+          <div className="relative aspect-[3/2] w-full overflow-hidden">
             <Image
               src="/images/about-portrait.jpg"
               alt={t.about.portraitAlt}

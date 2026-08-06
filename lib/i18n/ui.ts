@@ -58,9 +58,10 @@ export const ui = {
         'They are also, not incidentally, renowned musicians and composers. In a ceremonial context, they blend the melodies and traditions of East and West, of Amazon and Andes into a seamless whole of high, clear energy where music is a powerful vehicle within the experience.',
       lineageP3:
         'German and Lupita perform and record as Ayahuapu: their original music is prized by fellow musicians and ayahuasqueros and played at ceremonies throughout the world.',
-      portraitAlt: 'German Virguez and Lupita Castro, guides of kawsayvida.com',
-      headerAlt: 'German Virguez and Lupita Castro at a kawsayvida retreat',
-      samaAlt: 'German and Lupita performing medicine music as Ayahuapu',
+      portraitAlt: 'German Virguez and Lupita Castro in meditation before a ceremonial altar in a forest clearing',
+      headerAlt: 'German Virguez and Lupita Castro in meditation before a ceremonial altar in a forest clearing',
+      samaAlt: 'German and Lupita performing medicine music together as Ayahuapu, playing harp and guitar',
+      embraceAlt: 'German Virguez and Lupita Castro embracing in a forest, illuminated by a rainbow light flare',
       cta: {
         title: 'Explore the retreats',
         text: 'From the Sacred Valley of Perú to Valle de Bravo, México, find the retreat that calls to you.',
@@ -329,9 +330,10 @@ export const ui = {
         'Ayahuapu es el nombre de la agrupación musical que conforman. Son compositores y cantautores de sus temas en los que convergen diferentes géneros musicales.',
       lineageP3:
         'Su música original es apreciada por otros músicos y ayahuasqueros, y se toca en ceremonias alrededor del mundo.',
-      portraitAlt: 'German Virguez y Lupita Castro, guías de kawsayvida.com',
-      headerAlt: 'German Virguez y Lupita Castro en un retiro de kawsayvida',
-      samaAlt: 'German y Lupita interpretando música medicina como Ayahuapu',
+      portraitAlt: 'German Virguez y Lupita Castro en meditación frente a un altar ceremonial en un claro del bosque',
+      headerAlt: 'German Virguez y Lupita Castro en meditación frente a un altar ceremonial en un claro del bosque',
+      samaAlt: 'German y Lupita interpretando música medicina juntos como Ayahuapu, tocando arpa y guitarra',
+      embraceAlt: 'German Virguez y Lupita Castro abrazados en un bosque, iluminados por un destello de luz en arcoíris',
       cta: {
         title: 'Explora los retiros',
         text: 'Desde el Valle Sagrado del Perú hasta Valle de Bravo, México, encuentra el retiro que resuene contigo.',
