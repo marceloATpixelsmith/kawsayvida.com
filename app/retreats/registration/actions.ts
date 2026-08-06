@@ -2,6 +2,9 @@
 
 import { siteConfig } from '@/lib/site'
 import { verifyTurnstileToken } from '@/lib/turnstile'
+import { renderEmailShell, renderSection, renderTextSection, type EmailRow } from '@/lib/email-template'
+import { normalizeLang } from '@/lib/i18n/config'
+import { getUI, type UIStrings } from '@/lib/i18n/ui'
 
 // The UI is bilingual, so the action returns a stable `code` instead of a
 // hard-coded sentence. The client (registration-content.tsx) maps the code
@@ -78,56 +81,83 @@ function ageFromDob(dob: string): number | null {
   return age
 }
 
-function line(label: string, value: string): string {
-  return value ? `${label}: ${value}\n` : ''
-}
+// Builds the notification email's sections/rows using labels from the
+// visitor's own submission language, so the email reads in whichever
+// language they filled out the form in.
+function buildSections(
+  t: UIStrings,
+  fields: Record<string, string>,
+  lists: Record<string, string[]>,
+): Array<{ title: string; rows: EmailRow[] }> {
+  const r = t.registration
+  const joined = (key: string) => (lists[key] ?? []).join(', ')
+  const declarationValue =
+    fields.readDeclaration === 'yes'
+      ? r.healthQuestions.yes
+      : fields.readDeclaration === 'no'
+        ? r.healthQuestions.no
+        : ''
 
-function composeEmailBody(fields: Record<string, string>, lists: Record<string, string[]>): string {
-  const l = (label: string, key: string) => line(label, fields[key] ?? '')
-  const a = (label: string, key: string) => (lists[key]?.length ? `${label}: ${lists[key].join(', ')}\n` : '')
-
-  return (
-    `RETREAT / DATE\n` +
-    l('Retreat date', 'retreatDate') +
-    `\nPERSONAL INFO\n` +
-    l('Paternal last name', 'paternalLastName') +
-    l('Maternal last name', 'maternalLastName') +
-    l('Names', 'names') +
-    l('Date of birth', 'dob') +
-    l('Place of birth', 'placeOfBirth') +
-    l('Address', 'address') +
-    l('Phone', 'phone') +
-    l('Email', 'email') +
-    l('Marital status', 'maritalStatus') +
-    l('Passport number', 'passport') +
-    l('Occupation', 'occupation') +
-    l('Emergency contact name', 'emergencyName') +
-    l('Emergency contact phone', 'emergencyPhone') +
-    `\nHEALTH\n` +
-    l('Current or past illness', 'currentIllness') +
-    l('Accidents', 'accidents') +
-    l('Recent surgeries', 'recentSurgeries') +
-    a('Conditions', 'conditions') +
-    l('Psychiatric disorders', 'psychiatricDisorders') +
-    l('Allergies', 'allergies') +
-    l('Other diseases', 'otherDiseases') +
-    l('Current treatment', 'currentTreatment') +
-    l('Medications', 'medications') +
-    l('Alcohol/drug use', 'substanceUse') +
-    l('Frequency', 'substanceFrequency') +
-    l('Difficulty stopping use', 'difficultyStopping') +
-    a('Experiences (suicidal thoughts, panic attacks, etc.)', 'experiences') +
-    l('Frequency of above experiences', 'experienceFrequency') +
-    `\nEXPERIENCES & INTENTIONS\n` +
-    a('Ancestral medicine ritual experience', 'ritual') +
-    l('Other ritual', 'ritualOther') +
-    l('How was the experience', 'ritualExperience') +
-    l('Spiritual experience', 'spiritualExperience') +
-    l('Intentions', 'intentions') +
-    `\nDECLARATION\n` +
-    l('Read the declaration', 'readDeclaration') +
-    l('Signature (full name)', 'signatureName')
-  )
+  return [
+    {
+      title: r.retreatSectionTitle,
+      rows: [{ label: r.dateOfRetreat, value: fields.retreatDate }],
+    },
+    {
+      title: r.personalInfoTitle,
+      rows: [
+        { label: r.fields.paternalLastName, value: fields.paternalLastName },
+        { label: r.fields.maternalLastName, value: fields.maternalLastName },
+        { label: r.fields.names, value: fields.names },
+        { label: r.fields.dob, value: fields.dob },
+        { label: r.fields.placeOfBirth, value: fields.placeOfBirth },
+        { label: r.fields.address, value: fields.address },
+        { label: r.fields.phone, value: fields.phone },
+        { label: r.fields.email, value: fields.email },
+        { label: r.fields.maritalStatus, value: fields.maritalStatus },
+        { label: r.fields.passport, value: fields.passport },
+        { label: r.fields.occupation, value: fields.occupation },
+        { label: r.fields.emergencyName, value: fields.emergencyName },
+        { label: r.fields.emergencyPhone, value: fields.emergencyPhone },
+      ],
+    },
+    {
+      title: r.healthTitle,
+      rows: [
+        { label: r.healthFields.currentIllness, value: fields.currentIllness },
+        { label: r.healthFields.accidents, value: fields.accidents },
+        { label: r.healthFields.recentSurgeries, value: fields.recentSurgeries },
+        { label: r.conditionsLabel, value: joined('conditions') },
+        { label: r.healthQuestions.psychiatricDisorders, value: fields.psychiatricDisorders },
+        { label: r.healthQuestions.allergies, value: fields.allergies },
+        { label: r.healthQuestions.otherDiseases, value: fields.otherDiseases },
+        { label: r.healthQuestions.currentTreatment, value: fields.currentTreatment },
+        { label: r.healthQuestions.medications, value: fields.medications },
+        { label: r.healthQuestions.substanceUse, value: fields.substanceUse },
+        { label: r.healthQuestions.substanceFrequency, value: fields.substanceFrequency },
+        { label: r.healthQuestions.difficultyStopping, value: fields.difficultyStopping },
+        { label: r.experiencesTitle, value: joined('experiences') },
+        { label: r.experiences[r.experiences.length - 1], value: fields.experienceFrequency },
+      ],
+    },
+    {
+      title: r.intentionsTitle,
+      rows: [
+        { label: r.ritualQuestion, value: joined('ritual') },
+        { label: r.ritualOtherLabel, value: fields.ritualOther },
+        { label: r.experienceQuestions.howWasIt, value: fields.ritualExperience },
+        { label: r.experienceQuestions.spiritualExperience, value: fields.spiritualExperience },
+        { label: r.experienceQuestions.intentions, value: fields.intentions },
+      ],
+    },
+    {
+      title: r.declarationTitle,
+      rows: [
+        { label: r.readDeclaration, value: declarationValue },
+        { label: r.fullName, value: fields.signatureName },
+      ],
+    },
+  ]
 }
 
 const TEXT_FIELDS = [
@@ -175,6 +205,9 @@ export async function sendRegistration(
   if (str(formData, 'company').length > 0) {
     return { status: 'success', code: 'success' }
   }
+
+  const lang = normalizeLang(str(formData, 'lang'))
+  const t = getUI(lang)
 
   const fields: Record<string, string> = {}
   for (const key of TEXT_FIELDS) fields[key] = str(formData, key)
@@ -262,6 +295,16 @@ export async function sendRegistration(
       .filter(Boolean)
       .join(' ')
 
+    const sections = buildSections(t, fields, lists)
+    const bodyHtml = sections.map((s) => renderSection(s.title, s.rows)).join('')
+    const textContent = sections.map((s) => renderTextSection(s.title, s.rows)).join('')
+    const htmlContent = renderEmailShell({
+      preheader: `${fullName} — ${fields.retreatDate}`,
+      heading: t.registration.emailHeading,
+      bodyHtml,
+      footerText: `kawsayvida.com — ${lang.toUpperCase()}`,
+    })
+
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
@@ -278,8 +321,9 @@ export async function sendRegistration(
         ...(fields.email && isValidEmail(fields.email)
           ? { replyTo: { email: fields.email, name: fullName } }
           : {}),
-        subject: `New retreat registration from ${fullName}`,
-        textContent: composeEmailBody(fields, lists),
+        subject: t.registration.emailSubject.replace('{name}', fullName),
+        htmlContent,
+        textContent,
       }),
     })
 

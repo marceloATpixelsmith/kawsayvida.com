@@ -111,6 +111,9 @@ export const ui = {
         'All information provided will remain private.',
       ],
       formTitle: 'Registration Form',
+      emailSubject: 'New retreat registration from {name}',
+      emailHeading: 'New Retreat Registration',
+      retreatSectionTitle: 'Retreat',
       dateOfRetreat: 'Date of Retreat',
       retreatOptions: [
         'Retreat: July 16th to 19th, SMA',
@@ -145,6 +148,7 @@ export const ui = {
         accidents: 'Accidents',
         recentSurgeries: 'Recent Surgeries (1 year to date)',
       },
+      conditionsLabel: 'Do you have any of the following conditions?',
       conditions: [
         'Cardiovascular Disease',
         'CVA or Neurological Disease',
@@ -257,6 +261,8 @@ export const ui = {
       emailPlaceholder: 'you@email.com',
       messageLabel: 'Message',
       messagePlaceholder: 'How can we support you? Questions, intentions, or which retreat calls to you…',
+      emailSubject: 'New message from {name}',
+      emailHeading: 'New Contact Message',
       send: 'Send',
       sending: 'Sending…',
       successTitle: 'Message received',
@@ -400,6 +406,9 @@ export const ui = {
         'Toda la información proporcionada se mantendrá privada.',
       ],
       formTitle: 'Formato de Inscripción',
+      emailSubject: 'Nueva inscripción de retiro de {name}',
+      emailHeading: 'Nueva Inscripción de Retiro',
+      retreatSectionTitle: 'Retiro',
       dateOfRetreat: 'Fecha de Retiro',
       retreatOptions: [
         'Retiro: 16 al 19 de julio, SMA',
@@ -434,6 +443,7 @@ export const ui = {
         accidents: 'Accidentes',
         recentSurgeries: 'Cirugías Recientes (1 año a la fecha)',
       },
+      conditionsLabel: '¿Tienes alguna de las siguientes condiciones?',
       conditions: [
         'Enfermedades Cardiovasculares',
         'AVC o Enfermedad Neurológica',
@@ -546,6 +556,8 @@ export const ui = {
       emailPlaceholder: 'tu@correo.com',
       messageLabel: 'Mensaje',
       messagePlaceholder: '¿Cómo podemos acompañarte? Preguntas, intenciones o qué retiro te llama…',
+      emailSubject: 'Nuevo mensaje de {name}',
+      emailHeading: 'Nuevo Mensaje de Contacto',
       send: 'Enviar',
       sending: 'Enviando…',
       successTitle: 'Mensaje recibido',
