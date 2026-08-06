@@ -2,6 +2,9 @@
 
 import { siteConfig } from '@/lib/site'
 import { verifyTurnstileToken } from '@/lib/turnstile'
+import { renderEmailShell, renderRows, renderTextRows } from '@/lib/email-template'
+import { normalizeLang } from '@/lib/i18n/config'
+import { getUI } from '@/lib/i18n/ui'
 
 // The UI is bilingual, so the action returns a stable `code` instead of a
 // hard-coded sentence. The client (contact-form.tsx) maps the code to the
@@ -48,6 +51,8 @@ export async function sendContactMessage(
   const email = String(formData.get('email') ?? '').trim()
   const message = String(formData.get('message') ?? '').trim()
   const turnstileToken = String(formData.get('cf-turnstile-response') ?? '').trim()
+  const lang = normalizeLang(String(formData.get('lang') ?? ''))
+  const t = getUI(lang)
 
   // Honeypot field — bots fill this, humans don't.
   if (String(formData.get('company') ?? '').trim().length > 0) {
@@ -98,6 +103,20 @@ export async function sendContactMessage(
       return { status: 'error', code: 'challenge' }
     }
 
+    const rows = [
+      { label: t.form.nameLabel, value: name },
+      { label: t.form.emailLabel, value: email },
+      { label: t.form.messageLabel, value: message },
+    ]
+    const bodyHtml = renderRows(rows)
+    const htmlContent = renderEmailShell({
+      preheader: message.slice(0, 140),
+      heading: t.form.emailHeading,
+      bodyHtml,
+      footerText: `kawsayvida.com — ${lang.toUpperCase()}`,
+    })
+    const textContent = renderTextRows(rows)
+
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
@@ -115,8 +134,9 @@ export async function sendContactMessage(
           email,
           name,
         },
-        subject: `New message from ${name}`,
-        textContent: `Name: ${name}\n` + `Email: ${email}\n\n` + `${message}\n`,
+        subject: t.form.emailSubject.replace('{name}', name),
+        htmlContent,
+        textContent,
       }),
     })
 

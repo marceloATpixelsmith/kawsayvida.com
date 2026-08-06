@@ -209,7 +209,7 @@ function ageFromDob(dob: string): number | null {
 }
 
 export function RegistrationContent() {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const r = t.registration
   const [state, formAction] = useActionState(sendRegistration, initialState)
   const [clientErrors, setClientErrors] = useState<ClientErrors>({})
@@ -363,6 +363,7 @@ export function RegistrationContent() {
               className="hidden"
               aria-hidden="true"
             />
+            <input type="hidden" name="lang" value={lang} />
 
             {/* Security check first, so a load failure is visible immediately
                 — before the visitor invests time filling out this long form. */}
@@ -483,7 +484,10 @@ export function RegistrationContent() {
                 <TextArea name="recentSurgeries" />
               </Field>
 
-              <CheckboxGrid name="conditions" options={r.conditions} />
+              <div>
+                <p className="mb-3 text-xs uppercase tracking-[0.18em] text-primary">{r.conditionsLabel}</p>
+                <CheckboxGrid name="conditions" options={r.conditions} />
+              </div>
 
               <Field label={r.healthQuestions.psychiatricDisorders}>
                 <TextInput name="psychiatricDisorders" maxLength={LIMITS.textMax} />

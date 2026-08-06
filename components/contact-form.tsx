@@ -63,7 +63,7 @@ const fieldClasses =
 const fieldErrorClasses = 'border-destructive focus:border-destructive'
 
 export function ContactForm() {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const [state, formAction] = useActionState(sendContactMessage, initialState)
   const [clientErrors, setClientErrors] = useState<ClientErrors>({})
   const [turnstileToken, setTurnstileToken] = useState('')
@@ -148,6 +148,7 @@ export function ContactForm() {
         className="hidden"
         aria-hidden="true"
       />
+      <input type="hidden" name="lang" value={lang} />
 
       {/* Security check first, so a load failure is visible immediately. */}
       {turnstileSiteKey && (
