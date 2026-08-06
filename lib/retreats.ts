@@ -1,6 +1,12 @@
 import type { Localized } from './i18n/config'
 import { events, formatEventDates, type EventData } from './events'
 
+const RETREAT_IMAGES = [
+  '/images/retreat-sacred-valley.jpg',
+  '/images/retreat-valle-de-bravo-oct.jpg',
+  '/images/retreat-valle-de-bravo-dec.jpg',
+]
+
 export type RetreatBullet = {
   content: string
   html: boolean
@@ -77,7 +83,7 @@ function standardBullets(event: EventData): Localized<RetreatBullet[]> {
 export const retreats: Retreat[] = events
   .filter((event) => event.type === 'retreat' && Boolean(event.retreatPage))
   .sort((a, b) => a.startDate.localeCompare(b.startDate))
-  .map((event) => {
+  .map((event, index) => {
     const page = event.retreatPage
 
     if (!page) {
@@ -93,8 +99,11 @@ export const retreats: Retreat[] = events
         en: formatEventDates(event, 'en'),
         es: formatEventDates(event, 'es'),
       },
-      image: page.image,
-      alt: page.alt,
+      image: RETREAT_IMAGES[index % RETREAT_IMAGES.length],
+      alt: {
+        en: `Ayahuasca medicine retreat in ${event.location}`,
+        es: `Retiro de medicina Ayahuasca en ${event.location}`,
+      },
       includes: standardBullets(event),
     }
   })

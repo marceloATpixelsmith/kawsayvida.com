@@ -13,11 +13,6 @@
     "endDate": "2026-08-07",
     "location": "Valle Sagrado, Cusco, Perú",
     "retreatPage": {
-      "image": "/images/retreat-sacred-valley.jpg",
-      "alt": {
-        "en": "A stone terrace overlooking the Sacred Valley near Cusco, Perú",
-        "es": "Una terraza de piedra con vista al Valle Sagrado cerca de Cusco, Perú"
-      },
       "customBulletsHtml": {
         "en": [
           "Offering Ceremony (Guided by a Qero priest)"
@@ -49,11 +44,6 @@
     "endDate": "2026-10-18",
     "location": "Espacio Khungi, Valle de Bravo",
     "retreatPage": {
-      "image": "/images/retreat-valle-de-bravo-oct.jpg",
-      "alt": {
-        "en": "A ceremonial retreat house in Valle de Bravo, México, surrounded by pines",
-        "es": "Una casa de retiro ceremonial en Valle de Bravo, México, rodeada de pinos"
-      },
       "customBulletsHtml": {
         "en": [],
         "es": []
@@ -67,11 +57,6 @@
     "endDate": "2026-12-17",
     "location": "Espacio Khungi, Valle de Bravo",
     "retreatPage": {
-      "image": "/images/retreat-valle-de-bravo-dec.jpg",
-      "alt": {
-        "en": "Candlelight and offerings arranged for an Ayahuasca ceremony",
-        "es": "Velas y ofrendas dispuestas para una ceremonia de Ayahuasca"
-      },
       "customBulletsHtml": {
         "en": [],
         "es": []
