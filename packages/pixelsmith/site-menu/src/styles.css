@@ -114,6 +114,13 @@
   border-left: 1px solid var(--pixelsmith-menu-border);
 }
 
+.pixelsmith-site-menu__desktop-overlay {
+  display: none;
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+}
+
 .pixelsmith-site-menu__trigger {
   width: 2.5rem;
   height: 2.5rem;
@@ -212,8 +219,13 @@
     padding: var(--pixelsmith-menu-padding-y-lg) var(--pixelsmith-menu-horizontal-padding-lg);
   }
 
-  .pixelsmith-site-menu__desktop {
+  .pixelsmith-site-menu__desktop,
+  .pixelsmith-site-menu__desktop-overlay {
     display: flex;
+  }
+
+  .pixelsmith-site-menu__desktop-overlay {
+    flex-direction: column;
   }
 
   .pixelsmith-site-menu__trigger,

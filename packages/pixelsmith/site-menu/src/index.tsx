@@ -37,6 +37,7 @@ export interface SiteMenuProps {
   utility?: SiteMenuSlot
   mobileUtility?: SiteMenuSlot
   mobileExtra?: SiteMenuSlot
+  desktopOverlay?: SiteMenuSlot
   className?: string
   homeHref?: string
   brandLabel?: string
@@ -126,6 +127,7 @@ export function SiteMenu({
   utility,
   mobileUtility,
   mobileExtra,
+  desktopOverlay,
   className = '',
   homeHref = '/',
   brandLabel = 'Home',
@@ -220,6 +222,8 @@ export function SiteMenu({
           <MenuGlyph open={open} />
         </button>
       </div>
+
+      {desktopOverlay ? <div className="pixelsmith-site-menu__desktop-overlay">{resolveSlot(desktopOverlay, menuContext)}</div> : null}
 
       <div id={panelId} className="pixelsmith-site-menu__mobile-panel" data-open={open ? 'true' : 'false'}>
         <nav className="pixelsmith-site-menu__mobile-nav" aria-label={navLabel}>
