@@ -126,7 +126,11 @@ textarea.pixelsmith-contact__control {
 }
 
 .pixelsmith-contact__submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   justify-self: start;
+  gap: 0.65rem;
   min-height: 2.85rem;
   padding: 0.65rem 1.25rem;
   border: 1px solid currentColor;
@@ -134,7 +138,19 @@ textarea.pixelsmith-contact__control {
   background: var(--pixelsmith-form-fg);
   color: var(--pixelsmith-form-bg);
   font: inherit;
+  white-space: nowrap;
   cursor: pointer;
+}
+
+.pixelsmith-contact__submit-adornment {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+}
+
+.pixelsmith-contact__submit > span:first-child {
+  flex: 0 0 auto;
 }
 
 .pixelsmith-contact__submit:disabled {
