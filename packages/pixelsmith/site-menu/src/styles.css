@@ -121,6 +121,16 @@
   top: 100%;
 }
 
+.pixelsmith-site-menu__mobile-controls,
+.pixelsmith-site-menu__mobile-header-utility {
+  display: flex;
+  align-items: center;
+}
+
+.pixelsmith-site-menu__mobile-controls {
+  margin-left: auto;
+}
+
 .pixelsmith-site-menu__trigger {
   width: 2.5rem;
   height: 2.5rem;
@@ -228,7 +238,7 @@
     flex-direction: column;
   }
 
-  .pixelsmith-site-menu__trigger,
+  .pixelsmith-site-menu__mobile-controls,
   .pixelsmith-site-menu__mobile-panel {
     display: none;
   }

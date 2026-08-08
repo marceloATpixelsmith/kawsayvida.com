@@ -35,6 +35,7 @@ export interface SiteMenuProps {
   items: readonly SiteMenuItem[]
   brand: SiteMenuSlot
   utility?: SiteMenuSlot
+  mobileHeaderUtility?: SiteMenuSlot
   mobileUtility?: SiteMenuSlot
   mobileExtra?: SiteMenuSlot
   desktopOverlay?: SiteMenuSlot
@@ -125,6 +126,7 @@ export function SiteMenu({
   items,
   brand,
   utility,
+  mobileHeaderUtility,
   mobileUtility,
   mobileExtra,
   desktopOverlay,
@@ -211,16 +213,21 @@ export function SiteMenu({
           {utility ? <div className="pixelsmith-site-menu__utility">{resolveSlot(utility, menuContext)}</div> : null}
         </div>
 
-        <button
-          type="button"
-          className="pixelsmith-site-menu__trigger"
-          aria-label={open ? closeLabel : menuLabel}
-          aria-expanded={open}
-          aria-controls={panelId}
-          onClick={() => setOpen((current) => !current)}
-        >
-          <MenuGlyph open={open} />
-        </button>
+        <div className="pixelsmith-site-menu__mobile-controls">
+          {mobileHeaderUtility ? (
+            <div className="pixelsmith-site-menu__mobile-header-utility">{resolveSlot(mobileHeaderUtility, menuContext)}</div>
+          ) : null}
+          <button
+            type="button"
+            className="pixelsmith-site-menu__trigger"
+            aria-label={open ? closeLabel : menuLabel}
+            aria-expanded={open}
+            aria-controls={panelId}
+            onClick={() => setOpen((current) => !current)}
+          >
+            <MenuGlyph open={open} />
+          </button>
+        </div>
       </div>
 
       {desktopOverlay ? <div className="pixelsmith-site-menu__desktop-overlay">{resolveSlot(desktopOverlay, menuContext)}</div> : null}
