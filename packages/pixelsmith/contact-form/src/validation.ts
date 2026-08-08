@@ -3,7 +3,7 @@ import type {
   ContactFieldDefinition,
   ContactFormMessages,
   FieldValidationResult,
-} from "./types.js";
+} from "./types";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^[+()\-\.\s\d]{7,25}$/;
@@ -40,7 +40,13 @@ export function contactFieldConditionMatches(
       return false;
     }
 
-  return values[condition.field] === condition.equals;
+  const current = values[condition.field];
+  if (condition.equals === "" && current === undefined)
+    {
+      return true;
+    }
+
+  return current === condition.equals;
 }
 
 export function isContactFieldVisible(

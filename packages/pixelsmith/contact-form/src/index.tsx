@@ -5,15 +5,15 @@ import type {
   ContactFieldDefinition,
   ContactFormMessages,
   ContactSubmissionResult,
-} from "./types.js";
+} from "./types";
 import {
   contactFieldConditionMatches,
   isContactFieldVisible,
   validateContactFields,
-} from "./validation.js";
+} from "./validation";
 
-export * from "./types.js";
-export * from "./validation.js";
+export * from "./types";
+export * from "./validation";
 
 declare global
 {
@@ -189,7 +189,7 @@ function FieldControl({
 
   if (field.type === "hidden")
     {
-      return <input type="hidden" name={field.name} value={String(field.value ?? value)} />;
+      return <input type="hidden" name={field.name} value={String(value)} />;
     }
 
   return <input {...common} className="pixelsmith-contact__control" type={field.type} placeholder={field.placeholder} autoComplete={field.autocomplete} value={String(value)} minLength={field.minLength} maxLength={field.maxLength} min={field.min} max={field.max} pattern={field.pattern} onChange={(event) => onChange(event.target.value)} />;
@@ -258,6 +258,11 @@ function FieldList({
   );
 }
 
+function fieldDefault(field: ContactFieldDefinition): string | boolean
+{
+  return field.type === "checkbox" ? Boolean(field.value) : field.value ?? "";
+}
+
 export function ContactForm({
   fields,
   action = "/api/contact",
@@ -270,7 +275,7 @@ export function ContactForm({
   onSuccess,
 }: ContactFormProps): React.JSX.Element
 {
-  const initialValues = useMemo(() => Object.fromEntries(fields.map((field) => [field.name, field.type === "checkbox" ? Boolean(field.value) : field.value ?? ""])), [fields]);
+  const initialValues = useMemo(() => Object.fromEntries(fields.map((field) => [field.name, fieldDefault(field)])), [fields]);
   const [values, setValues] = useState<Record<string, string | boolean>>(initialValues);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [turnstileToken, setTurnstileToken] = useState("");
@@ -278,6 +283,20 @@ export function ContactForm({
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [serverMessage, setServerMessage] = useState("");
   const [resetSignal, setResetSignal] = useState(0);
+
+  useEffect(() => {
+    setValues((current) => {
+      const next: Record<string, string | boolean> = {};
+      for (const field of fields)
+        {
+          next[field.name] = field.type === "hidden"
+            ? fieldDefault(field)
+            : current[field.name] ?? fieldDefault(field);
+        }
+      return next;
+    });
+  }, [fields]);
+
   const visibleFields = fields.filter((field) => isContactFieldVisible(field, values));
   const fieldGroups = groupFields(visibleFields);
   const turnstileAtTop = turnstilePlacement === "top" || (turnstilePlacement === "auto" && visibleFields.filter((field) => field.type !== "hidden").length > longFormThreshold);

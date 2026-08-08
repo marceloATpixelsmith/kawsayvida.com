@@ -3,8 +3,8 @@ import type {
   ContactFormMessages,
   ContactFormPayload,
   ContactSubmissionResult,
-} from "./types.js";
-import { isContactFieldVisible, validateContactFields } from "./validation.js";
+} from "./types";
+import { isContactFieldVisible, validateContactFields } from "./validation";
 
 export interface ContactHandlerConfig
 {
@@ -17,6 +17,14 @@ export interface ContactHandlerConfig
   allowedOrigins?: readonly string[];
   maxBodyBytes?: number;
 }
+
+export interface ContactHandlerRequestOptions
+{
+  allowedOrigins?: readonly string[];
+  maxBodyBytes?: number;
+}
+
+export type ContactHandlerConfigResolver = (payload: ContactFormPayload) => ContactHandlerConfig;
 
 interface TurnstileVerificationResponse
 {
@@ -54,6 +62,69 @@ function isValidPayload(value: unknown): value is ContactFormPayload
     && typeof candidate.turnstileToken === "string"
     && (candidate.honeypot === undefined || typeof candidate.honeypot === "string"),
   );
+}
+
+async function readJsonWithinLimit(request: Request, maxBodyBytes: number): Promise<{ status: "ok"; value: unknown } | { status: "too-large" } | { status: "invalid" }>
+{
+  const contentLength = Number(request.headers.get("content-length") ?? "0");
+  if (Number.isFinite(contentLength) && contentLength > maxBodyBytes)
+    {
+      return { status: "too-large" };
+    }
+
+  if (!request.body)
+    {
+      return { status: "invalid" };
+    }
+
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+
+  try
+    {
+      while (true)
+        {
+          const { done, value } = await reader.read();
+          if (done)
+            {
+              break;
+            }
+          if (!value)
+            {
+              continue;
+            }
+
+          total += value.byteLength;
+          if (total > maxBodyBytes)
+            {
+              await reader.cancel();
+              return { status: "too-large" };
+            }
+          chunks.push(value);
+        }
+    }
+  catch
+    {
+      return { status: "invalid" };
+    }
+
+  const combined = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks)
+    {
+      combined.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+
+  try
+    {
+      return { status: "ok", value: JSON.parse(new TextDecoder().decode(combined)) as unknown };
+    }
+  catch
+    {
+      return { status: "invalid" };
+    }
 }
 
 async function verifyTurnstile(token: string, remoteIp?: string): Promise<boolean>
@@ -151,20 +222,40 @@ async function sendWithBrevo(
   return response.ok;
 }
 
-export function createContactHandler(config: ContactHandlerConfig)
+export function createContactHandler(
+  configOrResolver: ContactHandlerConfig | ContactHandlerConfigResolver,
+  requestOptions: ContactHandlerRequestOptions = {},
+)
 {
-  const knownFields = new Set(config.fields.map((field) => field.name));
+  const staticConfig = typeof configOrResolver === "function" ? undefined : configOrResolver;
+  const maxBodyBytes = requestOptions.maxBodyBytes ?? staticConfig?.maxBodyBytes ?? 64 * 1024;
+  const earlyAllowedOrigins = requestOptions.allowedOrigins ?? staticConfig?.allowedOrigins;
 
   return async function POST(request: Request): Promise<Response>
     {
-      const maxBodyBytes = config.maxBodyBytes ?? 64 * 1024;
-      const contentLength = Number(request.headers.get("content-length") ?? "0");
-      if (Number.isFinite(contentLength) && contentLength > maxBodyBytes)
+      if (earlyAllowedOrigins?.length)
+        {
+          const origin = request.headers.get("origin");
+          if (!origin || !earlyAllowedOrigins.includes(origin))
+            {
+              return Response.json({ ok: false, message: "Origin is not allowed." } satisfies ContactSubmissionResult, { status: 403 });
+            }
+        }
+
+      const parsed = await readJsonWithinLimit(request, maxBodyBytes);
+      if (parsed.status === "too-large")
         {
           return Response.json({ ok: false, message: "Request is too large." } satisfies ContactSubmissionResult, { status: 413 });
         }
+      if (parsed.status === "invalid" || !isValidPayload(parsed.value))
+        {
+          return Response.json({ ok: false, message: "Invalid request." } satisfies ContactSubmissionResult, { status: 400 });
+        }
 
-      if (config.allowedOrigins?.length)
+      const payload = parsed.value;
+      const config = typeof configOrResolver === "function" ? configOrResolver(payload) : configOrResolver;
+
+      if (!earlyAllowedOrigins && config.allowedOrigins?.length)
         {
           const origin = request.headers.get("origin");
           if (!origin || !config.allowedOrigins.includes(origin))
@@ -173,26 +264,12 @@ export function createContactHandler(config: ContactHandlerConfig)
             }
         }
 
-      let payload: unknown;
-      try
-        {
-          payload = await request.json();
-        }
-      catch
-        {
-          return Response.json({ ok: false, message: "Invalid request." } satisfies ContactSubmissionResult, { status: 400 });
-        }
-
-      if (!isValidPayload(payload))
-        {
-          return Response.json({ ok: false, message: "Invalid request." } satisfies ContactSubmissionResult, { status: 400 });
-        }
-
       if (payload.honeypot)
         {
           return Response.json({ ok: true } satisfies ContactSubmissionResult);
         }
 
+      const knownFields = new Set(config.fields.map((field) => field.name));
       const values: Record<string, string | boolean> = {};
       for (const [key, value] of Object.entries(payload.fields))
         {
