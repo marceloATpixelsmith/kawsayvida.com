@@ -10,6 +10,22 @@
   --pixelsmith-menu-border: color-mix(in srgb, var(--border) 60%, transparent);
 }
 
+/* KEEP THE EXISTING TABLET BEHAVIOR: DESKTOP NAVIGATION STARTS AT 1024PX. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .kawsayvida-site-menu .pixelsmith-site-menu__desktop,
+  .kawsayvida-site-menu .pixelsmith-site-menu__desktop-overlay {
+    display: none;
+  }
+
+  .kawsayvida-site-menu .pixelsmith-site-menu__trigger {
+    display: inline-flex;
+  }
+
+  .kawsayvida-site-menu .pixelsmith-site-menu__mobile-panel {
+    display: block;
+  }
+}
+
 .kawsayvida-contact-form {
   --pixelsmith-form-fg: var(--foreground);
   --pixelsmith-form-muted: var(--muted-foreground);
