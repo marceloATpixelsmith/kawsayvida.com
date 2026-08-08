@@ -5,6 +5,7 @@ import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { LanguageProvider } from '@/lib/i18n/context'
 import './globals.css'
+import './pixelsmith-core.css'
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
