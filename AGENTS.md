@@ -10,6 +10,32 @@ These instructions are the shared default for repositories owned by this account
 - For bug fixes, identify the underlying cause before changing code. Avoid symptom-only patches when the root cause can be fixed safely.
 - Before editing a shared component, utility, provider, layout, configuration object, or data structure, inspect where it is used.
 
+## Pixelsmith shared website core
+
+For standard Next.js client websites, shared cross-site functionality should come from `marceloATpixelsmith/pixelsith-website-core` when an applicable package exists rather than being independently reimplemented in the site.
+
+Current shared systems include:
+
+- `@pixelsmith/localization`
+- `@pixelsmith/site-menu`
+- `@pixelsmith/ecwid-store`
+- `@pixelsmith/contact-form`
+
+When creating a new site or modifying functionality covered by one of these packages:
+
+- inspect the target repository first and determine what is already established by its code, design, content, routes, and environment documentation;
+- consult `pixelsith-website-core/AGENT_INTEGRATION.md` plus the applicable package README/intake documentation before implementation;
+- use package-standard behavior and environment-variable names automatically rather than asking the user to choose standardized details again;
+- identify site-specific inputs that remain unresolved and ask the user only for those decisions;
+- never invent store IDs, category IDs, routes, recipients, languages, menu destinations, brand values, search terms, business rules, or secret values;
+- for an existing site, infer and preserve established branding, URLs, content, and intended behavior unless the task explicitly changes them;
+- for a new site with no design/source establishing a configurable visual choice, ask for the missing visual decision rather than copying another client's branding;
+- use the package's documented props, CSS variables, slots, and extension points instead of forking shared package code for ordinary site-specific styling;
+- if a reusable requirement cannot be represented by the current shared package, improve the shared package when appropriate rather than creating a divergent private implementation in one site;
+- complete the package-specific post-install verification checklist before considering the integration finished.
+
+Canonical reference sites are implementation references only. Do not copy their site-specific identifiers, content, URLs, credentials, or branding into another project.
+
 ## Canonical web stack
 
 For new websites, migrations to the standard stack, substantial new sections, or modernization work where a technology choice is actually required, use this baseline unless the repository has a justified project-specific requirement:
@@ -66,29 +92,29 @@ Do not perform a major dependency or framework upgrade as a side effect of an un
 - For bilingual sites, keep Spanish and English content synchronized when the task affects both languages.
 - Do not hard-code translated strings into components when the project already has an i18n layer or centralized translation data.
 - Preserve locale-aware routes, language toggles, metadata, and navigation behavior.
-- For new bilingual sites or migrations to the standard stack, use the same overall localization architecture and language-switching behavior as the canonical reference sites `zaxic.mx`, `terapiassonoras.com`, `gelectro.com`, and `kawsayvida.com` unless the task explicitly requires something different.
-- The language-switcher UI should remain visually and behaviorally consistent with those reference sites across desktop and mobile. Before implementing or changing it, inspect the current reference implementation rather than recreating the behavior from memory.
+- For new bilingual sites or migrations to the standard stack, use `@pixelsmith/localization` and the same overall localization architecture represented by the canonical reference sites `zaxic.mx`, `terapiassonoras.com`, `gelectro.com`, `kawsayvida.com`, and `ameyalli.space` unless the task explicitly requires something different.
+- The language-switcher UI should remain visually and behaviorally consistent with the shared package across desktop and mobile. Before implementing or changing it, inspect the current shared package/reference implementation rather than recreating the behavior from memory.
 - Keep language state, translated UI text, navigation labels, page copy, metadata, and locale-sensitive behavior centralized and predictable rather than scattering language conditionals throughout components.
 
 ## Ecwid storefront standard
 
-When creating a new site that uses Ecwid, or migrating an Ecwid storefront to the standard stack, use `zaxic.mx` as the canonical implementation reference unless the task explicitly specifies otherwise.
+When creating a new site that uses Ecwid, or migrating an Ecwid storefront to the standard stack, use `@pixelsmith/ecwid-store` with `zaxic.mx` as the canonical implementation reference unless the task explicitly specifies otherwise.
 
-- Inspect the current `zaxic.mx` implementation before building or materially changing the integration.
-- Match its overall Ecwid integration architecture, including the commerce/store providers or bridge layer, storefront UI behavior, cart-related UI, product/category navigation behavior, search experience, and category megamenu behavior.
-- The site-wide search should follow the same interaction model as `zaxic.mx`, including the dedicated search UI rather than allowing an inconsistent inline Ecwid search experience to become the primary site search.
-- Category navigation and the megamenu should follow the same dynamic category-driven approach as `zaxic.mx`, including appropriate filtering, ordering, localization, and responsive behavior.
-- Preserve clean site URLs and the site's own visual design around Ecwid rather than exposing raw/default Ecwid UI when the canonical implementation already provides an integrated site experience.
+- Read the Ecwid package README and `AGENT_INTAKE.md` before implementation and gather unresolved site-specific inputs as directed there.
+- Match the shared Ecwid integration architecture, including storefront UI behavior, cart-related UI, product/category navigation behavior, search experience, and category megamenu behavior.
+- The site-wide search should use the shared dedicated search UI rather than allowing an inconsistent inline Ecwid search experience to become the primary site search.
+- Category navigation and the megamenu should use the shared dynamic category-driven approach, including appropriate filtering, ordering, localization, and responsive behavior.
+- Preserve clean site URLs and the site's own visual design around Ecwid rather than exposing raw/default Ecwid UI when the shared implementation already provides an integrated site experience.
 - Use these environment variable names consistently for Ecwid credentials:
   - `ECWID_API_KEY`
   - `ECWID_CLIENT_SECRET`
 - Keep both Ecwid credentials server-only unless a specific Ecwid API requirement explicitly requires otherwise.
-- Do not copy hard-coded store IDs, category IDs, credentials, product data, or site-specific values from `zaxic.mx`. Reuse the architecture and interaction patterns while reading project-specific configuration from the target repository and environment.
-- If the current `zaxic.mx` implementation has evolved since these instructions were written, treat the repository's current implementation as the source of truth.
+- Do not copy hard-coded store IDs, category IDs, credentials, product data, route words, search terms, or site-specific values from `zaxic.mx`.
+- If the current shared package or `zaxic.mx` implementation has evolved since these instructions were written, inspect the current source rather than relying on memory.
 
 ## Forms, validation, spam protection, and notifications
 
-Unless a task explicitly requires a different setup, use the following standards for all public-facing forms.
+Unless a task explicitly requires a different setup, use `@pixelsmith/contact-form` for public-facing contact forms and follow its package intake checklist.
 
 ### Turnstile
 
