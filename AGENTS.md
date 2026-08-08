@@ -12,7 +12,7 @@ These instructions are the shared default for repositories owned by this account
 
 ## Pixelsmith shared website core
 
-For standard Next.js client websites, shared cross-site functionality should come from `marceloATpixelsmith/pixelsith-website-core` when an applicable package exists rather than being independently reimplemented in the site.
+For standard Next.js client websites, shared cross-site functionality should come from `marceloATpixelsmith/pixelsmith-website-core` when an applicable package exists rather than being independently reimplemented in the site.
 
 Current shared systems include:
 
@@ -24,7 +24,7 @@ Current shared systems include:
 When creating a new site or modifying functionality covered by one of these packages:
 
 - inspect the target repository first and determine what is already established by its code, design, content, routes, and environment documentation;
-- consult `pixelsith-website-core/AGENT_INTEGRATION.md` plus the applicable package README/intake documentation before implementation;
+- consult `pixelsmith-website-core/AGENT_INTEGRATION.md` plus the applicable package README/intake documentation before implementation;
 - use package-standard behavior and environment-variable names automatically rather than asking the user to choose standardized details again;
 - identify site-specific inputs that remain unresolved and ask the user only for those decisions;
 - never invent store IDs, category IDs, routes, recipients, languages, menu destinations, brand values, search terms, business rules, or secret values;
