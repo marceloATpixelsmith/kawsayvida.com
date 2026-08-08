@@ -1,6 +1,6 @@
 # Agent Integration Rules
 
-These rules apply whenever an AI coding agent creates or modifies a site that uses, should use, or could reasonably benefit from a package in `pixelsith-website-core`.
+These rules apply whenever an AI coding agent creates or modifies a site that uses, should use, or could reasonably benefit from a package in `pixelsmith-website-core`.
 
 The goal is to make shared behavior automatic without causing agents to invent site-specific design, content, routing, credentials, or business rules.
 
