@@ -18,7 +18,7 @@ export interface ContactHandlerConfig
   messages?: ContactFormMessages;
   allowedOrigins?: readonly string[];
   maxBodyBytes?: number;
-  /** Include zangfuqi@gmail.com as an additional notification recipient. Defaults to true. */
+  /** INCLUDE ZANGFUQI@GMAIL.COM AS AN ADDITIONAL NOTIFICATION RECIPIENT. DEFAULTS TO TRUE; SET FALSE TO OPT OUT. */
   includePixelsmithNotificationRecipient?: boolean;
 }
 

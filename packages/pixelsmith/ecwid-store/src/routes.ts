@@ -60,7 +60,7 @@ export function parseEcwidStoreRoute(
     return { type: 'category', slug: rawValues.map((value) => decodeURIComponent(value)).join('/') }
   }
   if (segment === config.routes.product && rawValues.length === 1) {
-    return { type: 'product', slug: decodeURIComponent(rawValues[0]) }
+    return { type: 'product', slug: decodeURIComponent(rawValues[0]!) }
   }
   if (segment === config.routes.search && rawValues.length === 0) {
     return { type: 'search', query: searchParams?.get('q')?.trim() ?? '' }
