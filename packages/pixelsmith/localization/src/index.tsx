@@ -151,6 +151,7 @@ export interface LanguageToggleProps
   className?: string;
   direction?: "down" | "right";
   variant?: "dark" | "light";
+  textTone?: "inherit" | "dark" | "light";
   ariaLabel?: string;
   reloadOnChange?: boolean;
   onChange?: (locale: LocaleCode) => void;
@@ -160,6 +161,7 @@ export function LanguageToggle({
   className = "",
   direction = "down",
   variant = "dark",
+  textTone = "inherit",
   ariaLabel = "Language",
   reloadOnChange = false,
   onChange,
@@ -191,7 +193,12 @@ export function LanguageToggle({
     }
 
   return (
-    <div className={`pixelsmith-language-toggle pixelsmith-language-toggle--${variant} ${className}`.trim()} data-direction={direction} role="group" aria-label={ariaLabel}>
+    <div
+      className={`pixelsmith-language-toggle pixelsmith-language-toggle--${variant} pixelsmith-language-toggle--text-${textTone} ${className}`.trim()}
+      data-direction={direction}
+      role="group"
+      aria-label={ariaLabel}
+    >
       <button type="button" className="pixelsmith-language-toggle__current" aria-haspopup="true" aria-label={`${ariaLabel}: ${current.label}`}>
         {current.shortLabel ?? current.code}
       </button>
