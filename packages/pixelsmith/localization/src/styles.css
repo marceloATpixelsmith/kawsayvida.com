@@ -14,6 +14,18 @@
   z-index: 50;
 }
 
+.pixelsmith-language-toggle--text-dark {
+  --pixelsmith-language-text: var(--pixelsmith-language-text-dark, #111111);
+}
+
+.pixelsmith-language-toggle--text-light {
+  --pixelsmith-language-text: var(--pixelsmith-language-text-light, #ffffff);
+}
+
+.pixelsmith-language-toggle--text-inherit {
+  --pixelsmith-language-text: currentColor;
+}
+
 .pixelsmith-language-toggle__current,
 .pixelsmith-language-toggle__alternate {
   width: 2rem;
