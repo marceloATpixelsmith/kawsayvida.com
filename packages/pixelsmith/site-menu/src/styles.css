@@ -184,6 +184,35 @@
   overscroll-behavior: contain;
 }
 
+.pixelsmith-site-menu__mobile-panel[data-variant='drawer-left'] {
+  /* Sits directly below the header bar (not overlapping it) and spans the
+     full width, so the header's own trigger button - which morphs into a
+     close icon - stays visible and is the only way to close the drawer.
+     `--pixelsmith-menu-header-height` is measured in JS and set as a pixel
+     value (not %): a `backdrop-filter` on the header (its scrolled/open
+     state) makes it the fixed-position containing block in some browsers,
+     and a pixel offset lands correctly regardless of which containing block
+     is used, since both the header and the viewport share the same (0, 0)
+     origin. */
+  position: fixed;
+  top: var(--pixelsmith-menu-header-height, 0px);
+  left: 0;
+  z-index: 40;
+  width: 100vw;
+  height: calc(100dvh - var(--pixelsmith-menu-header-height, 0px));
+  max-height: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-top: 1px solid var(--pixelsmith-menu-border);
+  transform: translateX(-100%);
+  transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pixelsmith-site-menu__mobile-panel[data-variant='drawer-left'][data-open='true'] {
+  max-height: none;
+  transform: translateX(0);
+}
+
 .pixelsmith-site-menu__mobile-nav {
   display: flex;
   flex-direction: column;

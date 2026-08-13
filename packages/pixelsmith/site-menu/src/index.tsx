@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Fragment, useEffect, useId, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
 
 export interface SiteMenuItem {
@@ -48,6 +48,8 @@ export interface SiteMenuProps {
   scrollThreshold?: number
   pathname?: string
   onNavigate?: () => void
+  /** 'panel' (default) expands below the header. 'drawer-left' slides a full-width panel in from the left edge, positioned just below the header bar so the trigger button (which morphs into a close icon) stays visible and remains the way to close it. */
+  mobilePanelVariant?: 'panel' | 'drawer-left'
   renderDesktopItem?: (item: SiteMenuItem, context: SiteMenuItemRenderContext) => ReactNode | undefined
   renderMobileItem?: (item: SiteMenuItem, context: SiteMenuItemRenderContext) => ReactNode | undefined
 }
@@ -139,6 +141,7 @@ export function SiteMenu({
   scrollThreshold = 24,
   pathname: providedPathname,
   onNavigate,
+  mobilePanelVariant = 'panel',
   renderDesktopItem,
   renderMobileItem,
 }: SiteMenuProps) {
@@ -148,6 +151,7 @@ export function SiteMenu({
   const [scrolled, setScrolled] = useState(false)
   const [mounted, setMounted] = useState(false)
   const panelId = useId()
+  const headerRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -160,6 +164,42 @@ export function SiteMenu({
   useEffect(() => {
     setOpen(false)
   }, [pathname])
+
+  useEffect(() => {
+    if (mobilePanelVariant !== 'drawer-left' || !open) return
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', onKeyDown)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [mobilePanelVariant, open])
+
+  useEffect(() => {
+    if (mobilePanelVariant !== 'drawer-left') return
+    const header = headerRef.current
+    if (!header) return
+
+    // Pixel value (not %) so the drawer's `top`/`height` land correctly
+    // regardless of which element ends up as its fixed-position containing
+    // block (a `backdrop-filter` on the header, applied while scrolled/open,
+    // makes the header itself the containing block in some browsers).
+    function updateHeaderHeight() {
+      header!.style.setProperty('--pixelsmith-menu-header-height', `${header!.getBoundingClientRect().height}px`)
+    }
+
+    updateHeaderHeight()
+    const observer = new ResizeObserver(updateHeaderHeight)
+    observer.observe(header)
+    return () => observer.disconnect()
+  }, [mobilePanelVariant])
 
   function handleNavigate() {
     setOpen(false)
@@ -185,6 +225,7 @@ export function SiteMenu({
 
   return (
     <header
+      ref={headerRef}
       className={`pixelsmith-site-menu ${className}`.trim()}
       data-scrolled={scrolled ? 'true' : 'false'}
       data-open={open ? 'true' : 'false'}
@@ -232,7 +273,12 @@ export function SiteMenu({
 
       {desktopOverlay ? <div className="pixelsmith-site-menu__desktop-overlay">{resolveSlot(desktopOverlay, menuContext)}</div> : null}
 
-      <div id={panelId} className="pixelsmith-site-menu__mobile-panel" data-open={open ? 'true' : 'false'}>
+      <div
+        id={panelId}
+        className="pixelsmith-site-menu__mobile-panel"
+        data-open={open ? 'true' : 'false'}
+        data-variant={mobilePanelVariant}
+      >
         <nav className="pixelsmith-site-menu__mobile-nav" aria-label={navLabel}>
           {items.map((item) => {
             const context = renderContext(item)

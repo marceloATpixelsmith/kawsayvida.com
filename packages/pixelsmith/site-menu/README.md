@@ -106,6 +106,17 @@ import '@pixelsmith/site-menu/styles.css'
 
 Map the target site's design through CSS custom properties instead of forking package code.
 
+## Mobile panel variants
+
+`mobilePanelVariant` controls how the mobile menu opens when the hamburger is tapped:
+
+- `'panel'` (default) — expands below the header, the standard behavior described above.
+- `'drawer-left'` — slides a full-width panel in from the left edge, positioned just below the header bar (not overlapping it), closing via the header's own trigger button (which morphs into a close icon), Escape, or navigation. Use this only when a site explicitly needs a drawer-style mobile menu instead of the standard expandable panel.
+
+```tsx
+<SiteMenu mobilePanelVariant="drawer-left" ... />
+```
+
 ## Post-install verification
 
 Verify:
