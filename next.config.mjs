@@ -13,6 +13,11 @@ const nextConfig = {
         destination: '/',
         permanent: true,
       },
+      {
+        source: '/retiros/inscripciones',
+        destination: '/retreats/registration',
+        permanent: true,
+      },
     ]
   },
 }
