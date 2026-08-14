@@ -33,6 +33,11 @@ const nextConfig = {
         destination: '/about',
         permanent: true,
       },
+      {
+        source: '/galeria',
+        destination: '/gallery',
+        permanent: true,
+      },
     ]
   },
 }
