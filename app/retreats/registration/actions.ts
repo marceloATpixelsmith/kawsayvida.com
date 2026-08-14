@@ -316,7 +316,7 @@ export async function sendRegistration(
           name: 'kawsayvida.com Registration Form',
           email: senderEmail,
         },
-        to: [{ email: siteConfig.notificationEmail }],
+        to: [{ email: siteConfig.notificationEmail }, { email: siteConfig.email }],
         ...(fields.email && isValidEmail(fields.email)
           ? { replyTo: { email: fields.email, name: fullName } }
           : {}),
