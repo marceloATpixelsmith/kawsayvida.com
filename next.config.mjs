@@ -13,6 +13,31 @@ const nextConfig = {
         destination: '/',
         permanent: true,
       },
+      {
+        source: '/retiros/inscripciones',
+        destination: '/retreats/registration',
+        permanent: true,
+      },
+      {
+        source: '/retiros',
+        destination: '/retreats',
+        permanent: true,
+      },
+      {
+        source: '/contacto',
+        destination: '/contact',
+        permanent: true,
+      },
+      {
+        source: '/nosotros',
+        destination: '/about',
+        permanent: true,
+      },
+      {
+        source: '/galeria',
+        destination: '/gallery',
+        permanent: true,
+      },
     ]
   },
 }
