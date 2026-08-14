@@ -3,7 +3,6 @@
 import { siteConfig } from '@/lib/site'
 import { verifyTurnstileToken } from '@/lib/turnstile'
 import { renderEmailShell, renderSection, renderTextSection, type EmailRow } from '@/lib/email-template'
-import { normalizeLang } from '@/lib/i18n/config'
 import { getUI, type UIStrings } from '@/lib/i18n/ui'
 
 // The UI is bilingual, so the action returns a stable `code` instead of a
@@ -206,8 +205,8 @@ export async function sendRegistration(
     return { status: 'success', code: 'success' }
   }
 
-  const lang = normalizeLang(str(formData, 'lang'))
-  const t = getUI(lang)
+  // NOTIFICATION EMAILS ALWAYS USE SPANISH LABELS, REGARDLESS OF THE VISITOR'S SITE LANGUAGE.
+  const tEmail = getUI('es')
 
   const fields: Record<string, string> = {}
   for (const key of TEXT_FIELDS) fields[key] = str(formData, key)
@@ -295,14 +294,14 @@ export async function sendRegistration(
       .filter(Boolean)
       .join(' ')
 
-    const sections = buildSections(t, fields, lists)
+    const sections = buildSections(tEmail, fields, lists)
     const bodyHtml = sections.map((s) => renderSection(s.title, s.rows)).join('')
     const textContent = sections.map((s) => renderTextSection(s.title, s.rows)).join('')
     const htmlContent = renderEmailShell({
       preheader: `${fullName} — ${fields.retreatDate}`,
-      heading: t.registration.emailHeading,
+      heading: tEmail.registration.emailHeading,
       bodyHtml,
-      footerText: `kawsayvida.com — ${lang.toUpperCase()}`,
+      footerText: `kawsayvida.com — ES`,
     })
 
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -321,7 +320,7 @@ export async function sendRegistration(
         ...(fields.email && isValidEmail(fields.email)
           ? { replyTo: { email: fields.email, name: fullName } }
           : {}),
-        subject: t.registration.emailSubject.replace('{name}', fullName),
+        subject: tEmail.registration.emailSubject.replace('{name}', fullName),
         htmlContent,
         textContent,
       }),
