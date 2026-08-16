@@ -15,7 +15,7 @@ export const POST = createContactHandler((payload) => {
   return {
     fields,
     messages,
-    to: [...siteConfig.notificationEmails, siteConfig.email],
+    to: siteConfig.notificationEmails,
     fromName: 'Kawsay Vida Contact Form',
     replyToField: 'email',
     subject: (values: Record<string, string | boolean>) => {
