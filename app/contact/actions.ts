@@ -129,7 +129,7 @@ export async function sendContactMessage(
           name: 'kawsayvida.com Contact Form',
           email: senderEmail,
         },
-        to: [...siteConfig.notificationEmails.map((email) => ({ email })), { email: siteConfig.email }],
+        to: siteConfig.notificationEmails.map((email) => ({ email })),
         replyTo: {
           email,
           name,
