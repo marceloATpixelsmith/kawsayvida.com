@@ -8,8 +8,7 @@ export const siteConfig = {
   // Contact email used in the footer and contact page.
   email: 'info@kawsayvida.com',
   // Where contact + registration form submissions are actually delivered.
-  // Kept separate from the public-facing `email` above.
-  notificationEmails: ['zangfuqi@gmail.com', 'cuentas.ayahuapu@gmail.com'],
+  notificationEmails: ['info@kawsayvida.com', 'cuentas.ayahuapu@gmail.com'],
   social: {
     facebook: 'https://www.facebook.com/yaru.virguezcastro',
     youtube: 'https://www.youtube.com/channel/UCI0XJvQ1Sb3Dn_dEMniSRTg',
