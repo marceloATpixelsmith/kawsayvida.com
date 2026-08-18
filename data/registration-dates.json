@@ -38,6 +38,19 @@
     "location": "Valle de Bravo, México"
   },
   {
+    "id": "valle-de-bravo-february-2027",
+    "type": "retreat",
+    "startDate": "2027-02-18",
+    "endDate": "2027-02-21",
+    "location": "Espacio Khungi, Valle de Bravo",
+    "retreatPage": {
+      "customBulletsHtml": {
+        "en": [],
+        "es": []
+      }
+    }
+  },
+  {
     "id": "valle-de-bravo-october-2026",
     "type": "retreat",
     "startDate": "2026-10-15",
