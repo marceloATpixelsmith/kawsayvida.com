@@ -81,10 +81,14 @@ function standardBullets(event: EventData): Localized<RetreatBullet[]> {
 
 //ONLY EVENTS WITH RETREAT-PAGE CONTENT ARE LISTED, AND THE DATE CONTROLS THEIR ORDER.
 //MATCHES THE REGISTRATION FORM'S CUTOFF SO A RETREAT DROPS OFF BOTH TOGETHER.
+//THE IMAGE INDEX COMES FROM THE FULL CHRONOLOGICAL LIST (BEFORE THE CUTOFF FILTER) SO A RETREAT'S
+//ASSIGNED IMAGE DOESN'T SHIFT WHEN AN EARLIER RETREAT EXPIRES.
 export const retreats: Retreat[] = events
-  .filter((event) => event.type === 'retreat' && Boolean(event.retreatPage) && isEventRegistrationVisible(event))
+  .filter((event) => event.type === 'retreat' && Boolean(event.retreatPage))
   .sort((a, b) => a.startDate.localeCompare(b.startDate))
-  .map((event, index) => {
+  .map((event, index) => ({ event, index }))
+  .filter(({ event }) => isEventRegistrationVisible(event))
+  .map(({ event, index }) => {
     const page = event.retreatPage
 
     if (!page) {
