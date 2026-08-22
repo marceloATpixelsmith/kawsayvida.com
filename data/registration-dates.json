@@ -24,6 +24,23 @@
     }
   },
   {
+    "id": "sacred-valley-march-2027",
+    "type": "retreat",
+    "startDate": "2027-03-26",
+    "endDate": "2027-04-01",
+    "location": "Valle Sagrado, Cusco, Perú",
+    "retreatPage": {
+      "customBulletsHtml": {
+        "en": [
+          "Offering Ceremony (Guided by a Qero priest)"
+        ],
+        "es": [
+          "Ceremonia de ofrenda (Guiada por sacerdote Qero)"
+        ]
+      }
+    }
+  },
+  {
     "id": "valle-de-bravo-august-2026",
     "type": "ceremony",
     "startDate": "2026-08-22",
