@@ -4,12 +4,12 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight, ArrowUpRight } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
-import { retreats } from '@/lib/retreats'
+import type { Retreat } from '@/lib/retreats'
 import { cn } from '@/lib/utils'
 import { pick } from '@/lib/i18n/config'
 import { useLanguage } from '@/lib/i18n/context'
 
-export function RetreatsContent() {
+export function RetreatsContent({ retreats }: { retreats: Retreat[] }) {
   const { lang, t } = useLanguage()
 
   return (
