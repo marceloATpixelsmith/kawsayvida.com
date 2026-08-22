@@ -11,13 +11,9 @@ import { cn } from '@/lib/utils'
 import { siteConfig } from '@/lib/site'
 import { useLanguage } from '@/lib/i18n/context'
 import type { UIStrings } from '@/lib/i18n/ui'
-import { events, eventRegistrationLabel, isEventRegistrationVisible } from '@/lib/events'
+import { eventRegistrationLabel, type EventData } from '@/lib/events'
 
 const initialState: RegistrationState = { status: 'idle', code: '' }
-
-const visibleRegistrationDates = events
-  .filter((event) => isEventRegistrationVisible(event))
-  .sort((a, b) => a.startDate.localeCompare(b.startDate))
 
 const LIMITS = {
   textMax: 200,
@@ -213,7 +209,7 @@ function ageFromDob(dob: string): number | null {
   return age
 }
 
-export function RegistrationContent() {
+export function RegistrationContent({ visibleRegistrationDates }: { visibleRegistrationDates: EventData[] }) {
   const { t, lang } = useLanguage()
   const r = t.registration
   const [state, formAction] = useActionState(sendRegistration, initialState)
