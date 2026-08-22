@@ -48,6 +48,13 @@
     "location": "Valle de Bravo, México"
   },
   {
+    "id": "valle-de-bravo-november-2026",
+    "type": "ceremony",
+    "startDate": "2026-11-07",
+    "endDate": "2026-11-07",
+    "location": "Valle de Bravo, México"
+  },
+  {
     "id": "valle-de-bravo-september-2026",
     "type": "ceremony",
     "startDate": "2026-09-12",
