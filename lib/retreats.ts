@@ -1,5 +1,5 @@
 import type { Localized } from './i18n/config'
-import { events, formatEventDates, type EventData } from './events'
+import { events, formatEventDates, isEventRegistrationVisible, type EventData } from './events'
 
 const RETREAT_IMAGES = [
   '/images/retreat-sacred-valley.jpg',
@@ -80,8 +80,9 @@ function standardBullets(event: EventData): Localized<RetreatBullet[]> {
 }
 
 //ONLY EVENTS WITH RETREAT-PAGE CONTENT ARE LISTED, AND THE DATE CONTROLS THEIR ORDER.
+//MATCHES THE REGISTRATION FORM'S CUTOFF SO A RETREAT DROPS OFF BOTH TOGETHER.
 export const retreats: Retreat[] = events
-  .filter((event) => event.type === 'retreat' && Boolean(event.retreatPage))
+  .filter((event) => event.type === 'retreat' && Boolean(event.retreatPage) && isEventRegistrationVisible(event))
   .sort((a, b) => a.startDate.localeCompare(b.startDate))
   .map((event, index) => {
     const page = event.retreatPage
