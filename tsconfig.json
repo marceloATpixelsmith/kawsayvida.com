@@ -19,7 +19,7 @@
       "@pixelsmith/localization": ["./packages/pixelsmith/localization/src/index.tsx"],
       "@pixelsmith/site-menu": ["./packages/pixelsmith/site-menu/src/index.tsx"],
       "@pixelsmith/contact-form": ["./packages/pixelsmith/contact-form/src/index.tsx"],
-      "@pixelsmith/contact-form/server": ["./packages/pixelsmith/contact-form/src/server.ts"]
+      "@pixelsmith/contact-form/server": ["./packages/pixelsmith/contact-form/src/server-entry.ts"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
