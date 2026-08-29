@@ -10,6 +10,8 @@ import postgres from "postgres";
 let client: ReturnType<typeof postgres> | null = null;
 let tableReady: Promise<void> | null = null;
 
+const LOGGING_WAIT_LIMIT_MS = 1_000;
+
 // SOME DATABASE_URL VALUES (E.G. COPIED FROM A PRISMA SETUP) INCLUDE A
 // `schema` QUERY PARAM. THAT'S A PRISMA-ONLY CONVENTION, NOT A REAL POSTGRES
 // SERVER PARAMETER — RAW POSTGRES FORWARDS UNRECOGNIZED QUERY PARAMS INTO THE
@@ -41,7 +43,10 @@ function getClient(): ReturnType<typeof postgres> | null
 
   if (!client)
     {
-      client = postgres(sanitizeConnectionString(connectionString), { max: 1 });
+      client = postgres(sanitizeConnectionString(connectionString), {
+        max: 1,
+        connect_timeout: 2,
+      });
     }
 
   return client;
@@ -111,17 +116,11 @@ export interface FormSubmissionRecord
   lang?: string;
 }
 
-// Records one form-submission event. Never throws — a database outage must
-// never break a real form submission, so failures are only logged.
-export async function recordFormSubmission(record: FormSubmissionRecord): Promise<void>
+async function persistFormSubmission(
+  db: ReturnType<typeof postgres>,
+  record: FormSubmissionRecord,
+): Promise<void>
 {
-  const db = getClient();
-  if (!db)
-    {
-      console.log("[v0] Form submission tracking skipped: DATABASE_URL is not configured.");
-      return;
-    }
-
   try
     {
       await ensureTable(db);
@@ -148,5 +147,37 @@ export async function recordFormSubmission(record: FormSubmissionRecord): Promis
   catch (err)
     {
       console.log("[v0] Form submission tracking failed:", err);
+    }
+}
+
+// Records one form-submission event. Never throws — and never lets a slow
+// database hold a real form response open indefinitely. The persistence
+// attempt may continue after this bounded wait on a warm serverless instance;
+// errors are handled inside persistFormSubmission so they cannot become
+// unhandled rejections.
+export async function recordFormSubmission(record: FormSubmissionRecord): Promise<void>
+{
+  const db = getClient();
+  if (!db)
+    {
+      console.log("[v0] Form submission tracking skipped: DATABASE_URL is not configured.");
+      return;
+    }
+
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<"timeout">((resolve) => {
+    timeoutHandle = setTimeout(() => resolve("timeout"), LOGGING_WAIT_LIMIT_MS);
+  });
+  const persisted = persistFormSubmission(db, record).then(() => "persisted" as const);
+  const result = await Promise.race([persisted, timeout]);
+
+  if (timeoutHandle)
+    {
+      clearTimeout(timeoutHandle);
+    }
+
+  if (result === "timeout")
+    {
+      console.log("[v0] Form submission tracking exceeded the response-path wait limit; continuing without blocking the form response.");
     }
 }
