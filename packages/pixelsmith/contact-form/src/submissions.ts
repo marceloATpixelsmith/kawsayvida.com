@@ -139,7 +139,7 @@ export async function recordFormSubmission(record: FormSubmissionRecord): Promis
       return;
     }
 
-  if (record.stage === "client_attempt")
+  if (record.stage === "client_attempt" || record.notificationSent !== undefined)
     {
       await persistFormSubmission(db, record);
       return;
