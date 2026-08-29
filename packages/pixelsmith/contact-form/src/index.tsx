@@ -38,6 +38,8 @@ export interface ContactFormProps
   submitAdornment?: ReactNode;
   successContent?: ReactNode | ((message: string) => ReactNode);
   onSuccess?: (result: ContactSubmissionResult) => void;
+  /** OPTIONAL ENDPOINT THAT RECEIVES A PII-FREE BEACON (FORM NAME + OUTCOME + INVALID FIELD NAMES) ON EVERY SUBMIT ATTEMPT, INCLUDING ONES BLOCKED BY CLIENT-SIDE VALIDATION. UNSET BY DEFAULT — NO CALLS ARE MADE UNLESS PROVIDED. */
+  diagnosticsEndpoint?: string;
 }
 
 function TurnstileWidget({
@@ -263,6 +265,19 @@ function fieldDefault(field: ContactFieldDefinition): string | boolean
   return field.type === "checkbox" ? Boolean(field.value) : field.value ?? "";
 }
 
+// Fire-and-forget diagnostics beacon. Only ever sends the outcome and the
+// NAMES of invalid fields — never field values — so it stays safe to call
+// unconditionally, including for fields blocked by client-side validation.
+function sendDiagnostics(endpoint: string, outcome: string, invalidFields: string[]): void
+{
+  fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ form: "contact", outcome, invalidFields }),
+    keepalive: true,
+  }).catch(() => {});
+}
+
 export function ContactForm({
   fields,
   action = "/api/contact",
@@ -273,6 +288,7 @@ export function ContactForm({
   submitAdornment,
   successContent,
   onSuccess,
+  diagnosticsEndpoint,
 }: ContactFormProps): React.JSX.Element
 {
   const initialValues = useMemo(() => Object.fromEntries(fields.map((field) => [field.name, fieldDefault(field)])), [fields]);
@@ -314,6 +330,13 @@ export function ContactForm({
         }
 
       setErrors(nextErrors);
+
+      if (diagnosticsEndpoint)
+        {
+          const invalidFields = Object.keys(nextErrors);
+          sendDiagnostics(diagnosticsEndpoint, invalidFields.length > 0 ? "blocked_client_validation" : "submitted", invalidFields);
+        }
+
       if (Object.keys(nextErrors).length > 0)
         {
           return;

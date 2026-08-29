@@ -104,6 +104,10 @@ Do not invent:
 - success/error wording when content requirements are material and not supplied;
 - an alternate email provider without being asked.
 
+## Diagnostics beacon (optional)
+
+Pass `diagnosticsEndpoint` to `<ContactForm>` to POST a PII-free beacon (`{ form: "contact", outcome, invalidFields }`) to that URL on every submit attempt, including ones blocked by client-side validation before any real submission is made. `invalidFields` is only ever field *names*, never values. Useful for troubleshooting "I filled it out but got no notification" reports. Unset by default — no calls are made unless a consuming site opts in.
+
 ## Typical server route
 
 ```ts
@@ -117,6 +121,8 @@ export const POST = createContactHandler({
   replyToField: 'email',
 })
 ```
+
+By default `createContactHandler` always adds a maintainer notification address (`PIXELSMITH_NOTIFICATION_EMAIL` in `server.ts`) as an extra silent recipient on top of `to`. Pass `includePixelsmithNotificationRecipient: false` in the config when a site's recipient list must be exactly `to` and nothing else.
 
 ## Post-install verification
 

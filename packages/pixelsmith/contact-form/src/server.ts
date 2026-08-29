@@ -279,6 +279,7 @@ export function createContactHandler(
 
       if (payload.honeypot)
         {
+          console.log("[v0] Contact form submission: honeypot_triggered");
           return Response.json({ ok: true } satisfies ContactSubmissionResult);
         }
 
@@ -293,14 +294,18 @@ export function createContactHandler(
           values[key] = typeof value === "string" ? value.trim() : value;
         }
 
+      // NEVER LOG FIELD VALUES BELOW — ONLY FIELD NAMES. THE SAME HANDLER
+      // MAY BE REUSED FOR FORMS COLLECTING SENSITIVE INFORMATION.
       const fieldErrors = validateContactFields(config.fields, values, config.messages);
       if (Object.keys(fieldErrors).length)
         {
+          console.log("[v0] Contact form submission: field_validation_failed", { fields: Object.keys(fieldErrors) });
           return Response.json({ ok: false, fieldErrors } satisfies ContactSubmissionResult, { status: 422 });
         }
 
       if (!payload.turnstileToken)
         {
+          console.log("[v0] Contact form submission: turnstile_token_missing");
           return Response.json({ ok: false, message: config.messages?.turnstileMessage ?? "Security verification is required." } satisfies ContactSubmissionResult, { status: 400 });
         }
 
@@ -308,15 +313,18 @@ export function createContactHandler(
       const turnstileValid = await verifyTurnstile(payload.turnstileToken, forwardedFor);
       if (!turnstileValid)
         {
+          console.log("[v0] Contact form submission: turnstile_verification_failed");
           return Response.json({ ok: false, message: config.messages?.turnstileMessage ?? "Security verification failed." } satisfies ContactSubmissionResult, { status: 400 });
         }
 
       const sent = await sendWithBrevo(config, values);
       if (!sent)
         {
+          console.log("[v0] Contact form submission: brevo_send_failed");
           return Response.json({ ok: false, message: config.messages?.errorMessage ?? "There was a problem sending your message." } satisfies ContactSubmissionResult, { status: 502 });
         }
 
+      console.log("[v0] Contact form submission: success");
       return Response.json({ ok: true, message: config.messages?.successMessage } satisfies ContactSubmissionResult);
     };
 }

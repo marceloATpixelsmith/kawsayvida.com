@@ -188,6 +188,20 @@ function SubmitButton({ label, sending }: { label: string; sending: string }) {
   )
 }
 
+// Fire-and-forget diagnostics beacon. Only ever sends the outcome and the
+// NAMES of invalid fields — never field values, since this form collects
+// health information — so it's safe to call on every submit click,
+// including attempts blocked by client-side validation before they ever
+// reach sendRegistration().
+function logFormAttempt(outcome: string, invalidFields: string[], lang: string): void {
+  fetch('/api/form-log', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ form: 'registration', outcome, invalidFields, lang }),
+    keepalive: true,
+  }).catch(() => {})
+}
+
 const isValidEmail = (email: string) =>
   email.length <= LIMITS.emailMax && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)
 
@@ -281,6 +295,9 @@ export function RegistrationContent({ visibleRegistrationDates }: { visibleRegis
     if (turnstileSiteKey && !turnstileToken) errors.challenge = fe.challenge
 
     setClientErrors(errors)
+
+    const invalidFields = Object.keys(errors)
+    logFormAttempt(invalidFields.length > 0 ? 'blocked_client_validation' : 'submitted', invalidFields, lang)
 
     if (Object.keys(errors).length > 0) {
       event.preventDefault()
