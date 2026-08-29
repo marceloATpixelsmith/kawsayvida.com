@@ -15,6 +15,7 @@ export function ContactForm() {
       fields={fields}
       messages={messages}
       diagnosticsEndpoint="/api/form-log"
+      diagnosticsIdentityFields={{ name: ['firstName', 'lastName'], email: 'email' }}
       turnstilePlacement="top"
       submitAdornment={<Send className="h-4 w-4" />}
       successContent={(message) => (

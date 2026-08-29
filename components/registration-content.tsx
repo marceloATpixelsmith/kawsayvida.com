@@ -188,16 +188,23 @@ function SubmitButton({ label, sending }: { label: string; sending: string }) {
   )
 }
 
-// Fire-and-forget diagnostics beacon. Only ever sends the outcome and the
-// NAMES of invalid fields — never field values, since this form collects
-// health information — so it's safe to call on every submit click,
+// Fire-and-forget diagnostics beacon, called on every submit click —
 // including attempts blocked by client-side validation before they ever
-// reach sendRegistration().
-function logFormAttempt(outcome: string, invalidFields: string[], lang: string): void {
+// reach sendRegistration() — so a failed/incomplete submission can still be
+// followed up on. Only the submitter's own name/email and the NAMES of
+// invalid fields are sent; no other field value (this form collects health
+// information) ever reaches this beacon.
+function logFormAttempt(
+  outcome: string,
+  invalidFields: string[],
+  lang: string,
+  name: string,
+  email: string,
+): void {
   fetch('/api/form-log', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ form: 'registration', outcome, invalidFields, lang }),
+    body: JSON.stringify({ form: 'registration', outcome, invalidFields, lang, name, email }),
     keepalive: true,
   }).catch(() => {})
 }
@@ -297,7 +304,14 @@ export function RegistrationContent({ visibleRegistrationDates }: { visibleRegis
     setClientErrors(errors)
 
     const invalidFields = Object.keys(errors)
-    logFormAttempt(invalidFields.length > 0 ? 'blocked_client_validation' : 'submitted', invalidFields, lang)
+    const submitterName = [get('names'), get('paternalLastName'), get('maternalLastName')].filter(Boolean).join(' ')
+    logFormAttempt(
+      invalidFields.length > 0 ? 'blocked_client_validation' : 'submitted',
+      invalidFields,
+      lang,
+      submitterName,
+      get('email'),
+    )
 
     if (Object.keys(errors).length > 0) {
       event.preventDefault()

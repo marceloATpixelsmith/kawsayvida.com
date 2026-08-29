@@ -38,8 +38,10 @@ export interface ContactFormProps
   submitAdornment?: ReactNode;
   successContent?: ReactNode | ((message: string) => ReactNode);
   onSuccess?: (result: ContactSubmissionResult) => void;
-  /** OPTIONAL ENDPOINT THAT RECEIVES A PII-FREE BEACON (FORM NAME + OUTCOME + INVALID FIELD NAMES) ON EVERY SUBMIT ATTEMPT, INCLUDING ONES BLOCKED BY CLIENT-SIDE VALIDATION. UNSET BY DEFAULT — NO CALLS ARE MADE UNLESS PROVIDED. */
+  /** OPTIONAL ENDPOINT THAT RECEIVES A BEACON (FORM NAME + OUTCOME + INVALID FIELD NAMES) ON EVERY SUBMIT ATTEMPT, INCLUDING ONES BLOCKED BY CLIENT-SIDE VALIDATION. UNSET BY DEFAULT — NO CALLS ARE MADE UNLESS PROVIDED. */
   diagnosticsEndpoint?: string;
+  /** WHICH `values` FIELD NAME(S) TO INCLUDE AS THE SUBMITTER'S IDENTITY IN THE DIAGNOSTICS BEACON, SO A FAILED/BLOCKED SUBMISSION CAN STILL BE FOLLOWED UP ON. `name` MAY LIST MULTIPLE FIELDS TO JOIN (E.G. FIRST + LAST). OMITTING A KEY (OR THIS WHOLE PROP) SENDS NO IDENTITY FOR IT. */
+  diagnosticsIdentityFields?: { name?: string | readonly string[]; email?: string };
 }
 
 function TurnstileWidget({
@@ -265,17 +267,42 @@ function fieldDefault(field: ContactFieldDefinition): string | boolean
   return field.type === "checkbox" ? Boolean(field.value) : field.value ?? "";
 }
 
-// Fire-and-forget diagnostics beacon. Only ever sends the outcome and the
-// NAMES of invalid fields — never field values — so it stays safe to call
-// unconditionally, including for fields blocked by client-side validation.
-function sendDiagnostics(endpoint: string, outcome: string, invalidFields: string[]): void
+// Fire-and-forget diagnostics beacon. Sends only the outcome, the NAMES of
+// invalid fields, and (when diagnosticsIdentityFields is configured) the
+// submitter's own name/email — never any other field's value — so it stays
+// safe to call unconditionally, including for fields blocked by client-side
+// validation.
+function sendDiagnostics(
+  endpoint: string,
+  outcome: string,
+  invalidFields: string[],
+  name: string | undefined,
+  email: string | undefined,
+): void
 {
   fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ form: "contact", outcome, invalidFields }),
+    body: JSON.stringify({ form: "contact", outcome, invalidFields, name, email }),
     keepalive: true,
   }).catch(() => {});
+}
+
+function resolveDiagnosticsIdentity(
+  identityFields: ContactFormProps["diagnosticsIdentityFields"],
+  values: Record<string, string | boolean>,
+): { name: string | undefined; email: string | undefined }
+{
+  const nameFields = identityFields?.name;
+  const name = nameFields
+    ? (Array.isArray(nameFields) ? nameFields : [nameFields as string])
+        .map((field) => String(values[field] ?? "").trim())
+        .filter(Boolean)
+        .join(" ") || undefined
+    : undefined;
+  const email = identityFields?.email ? String(values[identityFields.email] ?? "").trim() || undefined : undefined;
+
+  return { name, email };
 }
 
 export function ContactForm({
@@ -289,6 +316,7 @@ export function ContactForm({
   successContent,
   onSuccess,
   diagnosticsEndpoint,
+  diagnosticsIdentityFields,
 }: ContactFormProps): React.JSX.Element
 {
   const initialValues = useMemo(() => Object.fromEntries(fields.map((field) => [field.name, fieldDefault(field)])), [fields]);
@@ -334,7 +362,8 @@ export function ContactForm({
       if (diagnosticsEndpoint)
         {
           const invalidFields = Object.keys(nextErrors);
-          sendDiagnostics(diagnosticsEndpoint, invalidFields.length > 0 ? "blocked_client_validation" : "submitted", invalidFields);
+          const { name, email } = resolveDiagnosticsIdentity(diagnosticsIdentityFields, values);
+          sendDiagnostics(diagnosticsEndpoint, invalidFields.length > 0 ? "blocked_client_validation" : "submitted", invalidFields, name, email);
         }
 
       if (Object.keys(nextErrors).length > 0)

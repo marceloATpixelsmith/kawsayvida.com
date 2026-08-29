@@ -196,21 +196,39 @@ const TEXT_FIELDS = [
 
 const LIST_FIELDS = ['conditions', 'experiences', 'ritual'] as const
 
-// NEVER LOG FIELD VALUES BELOW — ONLY FIELD NAMES AND OUTCOME CODES. THIS
-// FORM COLLECTS HEALTH INFORMATION.
-function logRegistrationAttempt(outcome: string, extra?: Record<string, unknown>): void {
-  console.log('[v0] Registration form submission:', { outcome, ...extra })
+// ONLY THE SUBMITTER'S OWN NAME/EMAIL, FIELD NAMES, AND OUTCOME CODES ARE
+// LOGGED BELOW — NEVER ANY OTHER FIELD VALUE. THIS FORM COLLECTS HEALTH
+// INFORMATION THAT MUST NEVER REACH THESE LOGS.
+function logRegistrationAttempt(
+  outcome: string,
+  identity: { name: string; email: string },
+  extra?: Record<string, unknown>,
+): void {
+  console.log('[v0] Registration form submission:', {
+    outcome,
+    name: identity.name || undefined,
+    email: identity.email || undefined,
+    ...extra,
+  })
 }
 
 export async function sendRegistration(
   _prev: RegistrationState,
   formData: FormData,
 ): Promise<RegistrationState> {
+  const identity = {
+    name: [str(formData, 'names'), str(formData, 'paternalLastName'), str(formData, 'maternalLastName')]
+      .filter(Boolean)
+      .join(' '),
+    email: str(formData, 'email'),
+  }
+  const log = (outcome: string, extra?: Record<string, unknown>) => logRegistrationAttempt(outcome, identity, extra)
+
   // Honeypot — bots fill this, humans don't. A browser autofill tool
   // mistakenly filling this would also land here, which is exactly the kind
   // of silent near-miss this log line exists to catch.
   if (str(formData, 'company').length > 0) {
-    logRegistrationAttempt('honeypot_triggered')
+    log('honeypot_triggered')
     return { status: 'success', code: 'success' }
   }
 
@@ -245,35 +263,35 @@ export async function sendRegistration(
   const missingFields = requiredFields.filter(([, missing]) => missing).map(([key]) => key)
 
   if (missingFields.length > 0) {
-    logRegistrationAttempt('missing_required_fields', { fields: missingFields })
+    log('missing_required_fields', { fields: missingFields })
     return { status: 'error', code: 'missing' }
   }
 
   for (const key of TEXT_FIELDS) {
     const max = key === 'dob' ? 10 : LIMITS.longTextMax
     if (fields[key].length > max) {
-      logRegistrationAttempt('field_too_long', { field: key })
+      log('field_too_long', { field: key })
       return { status: 'error', code: 'generic' }
     }
   }
 
   if (fields.email && !isValidEmail(fields.email)) {
-    logRegistrationAttempt('invalid_email')
+    log('invalid_email')
     return { status: 'error', code: 'invalidEmail' }
   }
 
   const age = ageFromDob(fields.dob)
   if (age === null) {
-    logRegistrationAttempt('invalid_dob')
+    log('invalid_dob')
     return { status: 'error', code: 'invalidDob' }
   }
   if (age < LIMITS.minAge) {
-    logRegistrationAttempt('underage')
+    log('underage')
     return { status: 'error', code: 'underage' }
   }
 
   if (fields.readDeclaration !== 'yes') {
-    logRegistrationAttempt('declaration_not_accepted')
+    log('declaration_not_accepted')
     return { status: 'error', code: 'declarationRequired' }
   }
 
@@ -282,16 +300,16 @@ export async function sendRegistration(
   const turnstileSecret = process.env.TURNSTILE_SECRET_KEY
 
   if (!turnstileSecret) {
-    logRegistrationAttempt('turnstile_secret_missing')
+    log('turnstile_secret_missing')
     return { status: 'error', code: 'challenge' }
   }
   if (!turnstileToken) {
-    logRegistrationAttempt('turnstile_token_missing')
+    log('turnstile_token_missing')
     return { status: 'error', code: 'challenge' }
   }
 
   if (!apiKey || !senderEmail) {
-    logRegistrationAttempt('brevo_env_not_configured', {
+    log('brevo_env_not_configured', {
       hasBrevoApiKey: Boolean(apiKey),
       hasBrevoSenderEmail: Boolean(senderEmail),
     })
@@ -302,7 +320,7 @@ export async function sendRegistration(
     const challengePassed = await verifyTurnstileToken(turnstileToken)
 
     if (!challengePassed) {
-      logRegistrationAttempt('turnstile_verification_failed')
+      log('turnstile_verification_failed')
       return { status: 'error', code: 'challenge' }
     }
 
@@ -344,14 +362,14 @@ export async function sendRegistration(
 
     if (!response.ok) {
       const error = (await response.json().catch(() => ({}))) as BrevoError
-      logRegistrationAttempt('brevo_send_failed', { status: response.status, error })
+      log('brevo_send_failed', { status: response.status, error })
       return { status: 'error', code: 'generic' }
     }
 
-    logRegistrationAttempt('success')
+    log('success')
     return { status: 'success', code: 'success' }
   } catch (err) {
-    logRegistrationAttempt('exception', { error: String(err) })
+    log('exception', { error: String(err) })
     return { status: 'error', code: 'generic' }
   }
 }

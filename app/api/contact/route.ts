@@ -19,6 +19,7 @@ export const POST = createContactHandler((payload) => {
     // THE SHARED HANDLER DEFAULTS TO ALWAYS CC'ING ITS OWN MAINTAINER ADDRESS;
     // THIS SITE'S RECIPIENT LIST IS DELIBERATELY CURATED, SO OPT OUT OF THAT DEFAULT.
     includePixelsmithNotificationRecipient: false,
+    identityFields: { name: ['firstName', 'lastName'], email: 'email' },
     fromName: 'Kawsay Vida Contact Form',
     replyToField: 'email',
     subject: (values: Record<string, string | boolean>) => {
