@@ -38,6 +38,8 @@ export interface ContactFormProps
   submitAdornment?: ReactNode;
   successContent?: ReactNode | ((message: string) => ReactNode);
   onSuccess?: (result: ContactSubmissionResult) => void;
+  /** OPTIONAL ENDPOINT (FROM createSubmissionLogHandler IN ./server) THAT RECORDS EVERY SUBMIT CLICK — INCLUDING ONES BLOCKED BY CLIENT-SIDE VALIDATION — WITH THE FULL, UNREDACTED FIELD VALUES SO NO SUBMISSION ATTEMPT IS EVER LOST. UNSET BY DEFAULT — NO CALLS ARE MADE UNLESS PROVIDED. */
+  submissionLogEndpoint?: string;
 }
 
 function TurnstileWidget({
@@ -263,6 +265,26 @@ function fieldDefault(field: ContactFieldDefinition): string | boolean
   return field.type === "checkbox" ? Boolean(field.value) : field.value ?? "";
 }
 
+// Fire-and-forget submission-tracking beacon, called on every submit click —
+// including attempts blocked by client-side validation before they ever
+// reach the real form handler. Sends the full, unredacted field values by
+// design, so a submission is never lost even if the visitor never completed
+// or successfully sent it.
+function sendSubmissionLog(
+  endpoint: string,
+  outcome: string,
+  complete: boolean,
+  fields: Record<string, string | boolean>,
+): void
+{
+  fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ form: "contact", outcome, complete, fields }),
+    keepalive: true,
+  }).catch(() => {});
+}
+
 export function ContactForm({
   fields,
   action = "/api/contact",
@@ -273,6 +295,7 @@ export function ContactForm({
   submitAdornment,
   successContent,
   onSuccess,
+  submissionLogEndpoint,
 }: ContactFormProps): React.JSX.Element
 {
   const initialValues = useMemo(() => Object.fromEntries(fields.map((field) => [field.name, fieldDefault(field)])), [fields]);
@@ -314,6 +337,13 @@ export function ContactForm({
         }
 
       setErrors(nextErrors);
+
+      if (submissionLogEndpoint)
+        {
+          const complete = Object.keys(nextErrors).length === 0;
+          sendSubmissionLog(submissionLogEndpoint, complete ? "submitted" : "blocked_client_validation", complete, values);
+        }
+
       if (Object.keys(nextErrors).length > 0)
         {
           return;
