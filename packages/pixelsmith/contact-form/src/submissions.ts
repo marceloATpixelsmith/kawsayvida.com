@@ -32,6 +32,7 @@ function getClient(): ReturnType<typeof postgres> | null
       client = postgres(sanitizeConnectionString(connectionString), {
         max: 1,
         connect_timeout: 2,
+        connection: { statement_timeout: 1_500 },
       });
     }
 
