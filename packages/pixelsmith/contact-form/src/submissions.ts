@@ -4,6 +4,7 @@ let client: ReturnType<typeof postgres> | null = null;
 let tableReady: Promise<void> | null = null;
 
 const LOGGING_WAIT_LIMIT_MS = 1_000;
+const DURABLE_LOGGING_WAIT_LIMIT_MS = 2_500;
 
 function sanitizeConnectionString(connectionString: string): string
 {
@@ -132,6 +133,42 @@ function submissionClient(): ReturnType<typeof postgres> | null
   return db;
 }
 
+function destroySubmissionClient(db: ReturnType<typeof postgres>): void
+{
+  if (client === db)
+    {
+      client = null;
+    }
+  tableReady = null;
+  void db.end({ timeout: 0 }).catch((err) => {
+    console.log("[v0] Form submission tracking client shutdown failed:", err);
+  });
+}
+
+async function persistFormSubmissionWithDeadline(
+  db: ReturnType<typeof postgres>,
+  record: FormSubmissionRecord,
+): Promise<void>
+{
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<"timeout">((resolve) => {
+    timeoutHandle = setTimeout(() => resolve("timeout"), DURABLE_LOGGING_WAIT_LIMIT_MS);
+  });
+  const persisted = persistFormSubmission(db, record).then(() => "persisted" as const);
+  const result = await Promise.race([persisted, timeout]);
+
+  if (timeoutHandle)
+    {
+      clearTimeout(timeoutHandle);
+    }
+
+  if (result === "timeout")
+    {
+      console.log("[v0] Durable form submission tracking exceeded its deadline; destroying the logging client.");
+      destroySubmissionClient(db);
+    }
+}
+
 export async function recordFormSubmission(record: FormSubmissionRecord): Promise<void>
 {
   const db = submissionClient();
@@ -140,9 +177,15 @@ export async function recordFormSubmission(record: FormSubmissionRecord): Promis
       return;
     }
 
-  if (record.stage === "client_attempt" || record.notificationSent !== undefined)
+  if (record.stage === "client_attempt")
     {
       await persistFormSubmission(db, record);
+      return;
+    }
+
+  if (record.notificationSent !== undefined)
+    {
+      await persistFormSubmissionWithDeadline(db, record);
       return;
     }
 
