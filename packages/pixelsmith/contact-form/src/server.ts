@@ -5,6 +5,9 @@ import type {
   ContactSubmissionResult,
 } from "./types";
 import { isContactFieldVisible, validateContactFields } from "./validation";
+import { recordFormSubmission, type FormSubmissionRecord } from "./submissions";
+
+export { recordFormSubmission, type FormSubmissionRecord } from "./submissions";
 
 const PIXELSMITH_NOTIFICATION_EMAIL = "zangfuqi@gmail.com";
 
@@ -209,10 +212,18 @@ function renderEmailHtml(
   return `<table role="presentation" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px">${rows}</table>`;
 }
 
+interface BrevoSendResult
+{
+  ok: boolean;
+  status: number;
+  messageId?: string;
+  recipients: string[];
+}
+
 async function sendWithBrevo(
   config: ContactHandlerConfig,
   values: Record<string, string | boolean>,
-): Promise<boolean>
+): Promise<BrevoSendResult>
 {
   const apiKey = process.env.BREVO_API_KEY;
   const fromEmail = process.env.BREVO_FROM_EMAIL;
@@ -231,13 +242,14 @@ async function sendWithBrevo(
   const replyTo = typeof replyToValue === "string" && replyToValue.includes("@")
     ? { email: replyToValue }
     : undefined;
+  const recipients = normalizeEmailList(config.to, config.includePixelsmithNotificationRecipient !== false);
 
   const payload = {
     sender: {
       email: fromEmail,
       name: config.fromName ?? "Website Contact Form",
     },
-    to: normalizeEmailList(config.to, config.includePixelsmithNotificationRecipient !== false),
+    to: recipients,
     subject,
     htmlContent: renderEmailHtml(config.fields, values),
     ...(replyTo ? { replyTo } : {}),
@@ -254,7 +266,17 @@ async function sendWithBrevo(
     cache: "no-store",
   });
 
-  return response.ok;
+  // Brevo returns { messageId } on acceptance — this is the actual proof of
+  // send, recorded alongside the submission so a "no notification arrived"
+  // report can be checked against what Brevo itself confirmed.
+  const result = await response.json().catch(() => ({})) as { messageId?: string };
+
+  return {
+    ok: response.ok,
+    status: response.status,
+    messageId: result.messageId,
+    recipients: recipients.map((recipient) => recipient.email),
+  };
 }
 
 export function createContactHandler(
@@ -293,6 +315,26 @@ export function createContactHandler(
       const log = (outcome: string, extra?: Record<string, unknown>) =>
         console.log("[v0] Contact form submission:", { outcome, name: identity.name, email: identity.email, ...extra });
 
+      const site = request.headers.get("host") ?? "unknown";
+      const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+      const userAgent = request.headers.get("user-agent") ?? undefined;
+      const referer = request.headers.get("referer") ?? undefined;
+      const lang = typeof payload.fields.lang === "string" ? payload.fields.lang : undefined;
+      const record = (outcome: string, extra: Partial<FormSubmissionRecord> = {}) =>
+        recordFormSubmission({
+          site,
+          form: "contact",
+          stage: "server_processed",
+          outcome,
+          complete: true,
+          fields: payload.fields,
+          ip,
+          userAgent,
+          referer,
+          lang,
+          ...extra,
+        });
+
       if (!earlyAllowedOrigins && config.allowedOrigins?.length)
         {
           const origin = request.headers.get("origin");
@@ -305,6 +347,7 @@ export function createContactHandler(
       if (payload.honeypot)
         {
           log("honeypot_triggered");
+          await record("honeypot_triggered");
           return Response.json({ ok: true } satisfies ContactSubmissionResult);
         }
 
@@ -323,31 +366,128 @@ export function createContactHandler(
       if (Object.keys(fieldErrors).length)
         {
           log("field_validation_failed", { fields: Object.keys(fieldErrors) });
+          await record("field_validation_failed", { complete: false, validated: false });
           return Response.json({ ok: false, fieldErrors } satisfies ContactSubmissionResult, { status: 422 });
         }
 
       if (!payload.turnstileToken)
         {
           log("turnstile_token_missing");
+          await record("turnstile_token_missing", { validated: false });
           return Response.json({ ok: false, message: config.messages?.turnstileMessage ?? "Security verification is required." } satisfies ContactSubmissionResult, { status: 400 });
         }
 
-      const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-      const turnstileValid = await verifyTurnstile(payload.turnstileToken, forwardedFor);
+      const turnstileValid = await verifyTurnstile(payload.turnstileToken, ip);
       if (!turnstileValid)
         {
           log("turnstile_verification_failed");
+          await record("turnstile_verification_failed", { validated: false });
           return Response.json({ ok: false, message: config.messages?.turnstileMessage ?? "Security verification failed." } satisfies ContactSubmissionResult, { status: 400 });
         }
 
       const sent = await sendWithBrevo(config, values);
-      if (!sent)
+      if (!sent.ok)
         {
-          log("brevo_send_failed");
+          log("brevo_send_failed", { status: sent.status });
+          await record("brevo_send_failed", {
+            validated: true,
+            notificationSent: false,
+            notificationRecipients: sent.recipients,
+            notificationProviderId: sent.messageId,
+          });
           return Response.json({ ok: false, message: config.messages?.errorMessage ?? "There was a problem sending your message." } satisfies ContactSubmissionResult, { status: 502 });
         }
 
       log("success");
+      await record("success", {
+        validated: true,
+        notificationSent: true,
+        notificationRecipients: sent.recipients,
+        notificationProviderId: sent.messageId,
+      });
       return Response.json({ ok: true, message: config.messages?.successMessage } satisfies ContactSubmissionResult);
+    };
+}
+
+interface SubmissionLogPayload
+{
+  form: string;
+  outcome: string;
+  complete: boolean;
+  fields?: Record<string, unknown>;
+  lang?: string;
+}
+
+const MAX_SUBMISSION_LOG_FIELDS_JSON_BYTES = 20_000;
+
+function isValidSubmissionLogPayload(value: unknown): value is SubmissionLogPayload
+{
+  if (!value || typeof value !== "object")
+    {
+      return false;
+    }
+
+  const v = value as Record<string, unknown>;
+  if (typeof v.form !== "string" || v.form.length === 0 || v.form.length > 60)
+    {
+      return false;
+    }
+  if (typeof v.outcome !== "string" || v.outcome.length === 0 || v.outcome.length > 60)
+    {
+      return false;
+    }
+  if (typeof v.complete !== "boolean")
+    {
+      return false;
+    }
+  if (v.lang !== undefined && typeof v.lang !== "string")
+    {
+      return false;
+    }
+  if (v.fields !== undefined)
+    {
+      if (typeof v.fields !== "object" || v.fields === null || Array.isArray(v.fields))
+        {
+          return false;
+        }
+      if (JSON.stringify(v.fields).length > MAX_SUBMISSION_LOG_FIELDS_JSON_BYTES)
+        {
+          return false;
+        }
+    }
+
+  return true;
+}
+
+// Route-handler factory for the client-side "record every submit click"
+// beacon — including attempts blocked by client-side validation before they
+// ever reach a real form handler. Mount it at whatever route a site's form(s)
+// point their beacon at, e.g.:
+//
+//   export const POST = createSubmissionLogHandler();
+export function createSubmissionLogHandler()
+{
+  return async function POST(request: Request): Promise<Response>
+    {
+      const body = await request.json().catch(() => null);
+      if (!isValidSubmissionLogPayload(body))
+        {
+          return Response.json({ ok: false }, { status: 400 });
+        }
+
+      await recordFormSubmission({
+        site: request.headers.get("host") ?? "unknown",
+        form: body.form,
+        stage: "client_attempt",
+        outcome: body.outcome,
+        complete: body.complete,
+        fields: body.fields,
+        ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
+        userAgent: request.headers.get("user-agent") ?? undefined,
+        referer: request.headers.get("referer") ?? undefined,
+        lang: body.lang,
+      });
+
+      return Response.json({ ok: true });
     };
 }

@@ -14,8 +14,7 @@ export function ContactForm() {
       className="kawsayvida-contact-form"
       fields={fields}
       messages={messages}
-      diagnosticsEndpoint="/api/form-log"
-      diagnosticsIdentityFields={{ name: ['firstName', 'lastName'], email: 'email' }}
+      submissionLogEndpoint="/api/form-log"
       turnstilePlacement="top"
       submitAdornment={<Send className="h-4 w-4" />}
       successContent={(message) => (

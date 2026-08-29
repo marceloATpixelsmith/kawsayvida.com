@@ -21,6 +21,9 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
+  "dependencies": {
+    "postgres": "^3.4.9"
+  },
   "peerDependencies": {
     "react": ">=19 <20",
     "react-dom": ">=19 <20"
