@@ -20,6 +20,8 @@ export interface ContactHandlerConfig
   maxBodyBytes?: number;
   /** INCLUDE ZANGFUQI@GMAIL.COM AS AN ADDITIONAL NOTIFICATION RECIPIENT. DEFAULTS TO TRUE; SET FALSE TO OPT OUT. */
   includePixelsmithNotificationRecipient?: boolean;
+  /** WHICH SUBMITTED-VALUES FIELD NAME(S) TO INCLUDE AS THE SUBMITTER'S IDENTITY IN SERVER LOGS, SO A FAILED SUBMISSION CAN STILL BE FOLLOWED UP ON. `name` MAY LIST MULTIPLE FIELDS TO JOIN (E.G. FIRST + LAST). OMITTING A KEY (OR THIS WHOLE PROP) LOGS NO IDENTITY FOR IT. */
+  identityFields?: { name?: string | readonly string[]; email?: string };
 }
 
 export interface ContactHandlerRequestOptions
@@ -138,6 +140,26 @@ async function readJsonWithinLimit(request: Request, maxBodyBytes: number): Prom
     {
       return { status: "invalid" };
     }
+}
+
+// ONLY THE SUBMITTER'S OWN NAME/EMAIL (WHEN identityFields IS CONFIGURED)
+// AND FIELD NAMES ARE EVER LOGGED — NEVER ANY OTHER FIELD VALUE. THE SAME
+// HANDLER MAY BE REUSED FOR FORMS COLLECTING SENSITIVE INFORMATION.
+function resolveIdentity(
+  identityFields: ContactHandlerConfig["identityFields"],
+  values: Record<string, unknown>,
+): { name: string | undefined; email: string | undefined }
+{
+  const nameFields = identityFields?.name;
+  const name = nameFields
+    ? (Array.isArray(nameFields) ? nameFields : [nameFields as string])
+        .map((field) => String(values[field] ?? "").trim())
+        .filter(Boolean)
+        .join(" ") || undefined
+    : undefined;
+  const email = identityFields?.email ? String(values[identityFields.email] ?? "").trim() || undefined : undefined;
+
+  return { name, email };
 }
 
 async function verifyTurnstile(token: string, remoteIp?: string): Promise<boolean>
@@ -267,6 +289,9 @@ export function createContactHandler(
 
       const payload = parsed.value;
       const config = typeof configOrResolver === "function" ? configOrResolver(payload) : configOrResolver;
+      const identity = resolveIdentity(config.identityFields, payload.fields);
+      const log = (outcome: string, extra?: Record<string, unknown>) =>
+        console.log("[v0] Contact form submission:", { outcome, name: identity.name, email: identity.email, ...extra });
 
       if (!earlyAllowedOrigins && config.allowedOrigins?.length)
         {
@@ -279,6 +304,7 @@ export function createContactHandler(
 
       if (payload.honeypot)
         {
+          log("honeypot_triggered");
           return Response.json({ ok: true } satisfies ContactSubmissionResult);
         }
 
@@ -296,11 +322,13 @@ export function createContactHandler(
       const fieldErrors = validateContactFields(config.fields, values, config.messages);
       if (Object.keys(fieldErrors).length)
         {
+          log("field_validation_failed", { fields: Object.keys(fieldErrors) });
           return Response.json({ ok: false, fieldErrors } satisfies ContactSubmissionResult, { status: 422 });
         }
 
       if (!payload.turnstileToken)
         {
+          log("turnstile_token_missing");
           return Response.json({ ok: false, message: config.messages?.turnstileMessage ?? "Security verification is required." } satisfies ContactSubmissionResult, { status: 400 });
         }
 
@@ -308,15 +336,18 @@ export function createContactHandler(
       const turnstileValid = await verifyTurnstile(payload.turnstileToken, forwardedFor);
       if (!turnstileValid)
         {
+          log("turnstile_verification_failed");
           return Response.json({ ok: false, message: config.messages?.turnstileMessage ?? "Security verification failed." } satisfies ContactSubmissionResult, { status: 400 });
         }
 
       const sent = await sendWithBrevo(config, values);
       if (!sent)
         {
+          log("brevo_send_failed");
           return Response.json({ ok: false, message: config.messages?.errorMessage ?? "There was a problem sending your message." } satisfies ContactSubmissionResult, { status: 502 });
         }
 
+      log("success");
       return Response.json({ ok: true, message: config.messages?.successMessage } satisfies ContactSubmissionResult);
     };
 }
