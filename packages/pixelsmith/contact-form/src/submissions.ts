@@ -20,7 +20,7 @@ function sanitizeConnectionString(connectionString: string): string
     }
 }
 
-function getClient(): ReturnType<typeof postgres> | null
+function createClient(): ReturnType<typeof postgres> | null
 {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString)
@@ -28,13 +28,17 @@ function getClient(): ReturnType<typeof postgres> | null
       return null;
     }
 
+  return postgres(sanitizeConnectionString(connectionString), {
+    max: 1,
+    connect_timeout: 2,
+  });
+}
+
+function getClient(): ReturnType<typeof postgres> | null
+{
   if (!client)
     {
-      client = postgres(sanitizeConnectionString(connectionString), {
-        max: 1,
-        connect_timeout: 2,
-        connection: { statement_timeout: 1_500 },
-      });
+      client = createClient();
     }
 
   return client;
@@ -93,6 +97,28 @@ export interface FormSubmissionRecord
   lang?: string;
 }
 
+async function insertFormSubmission(
+  db: ReturnType<typeof postgres>,
+  record: FormSubmissionRecord,
+): Promise<void>
+{
+  type Jsonable = Parameters<typeof db.json>[0];
+  await db`
+    INSERT INTO pixelsmithforms.form_submissions (
+      site, form, stage, outcome, complete, validated, fields,
+      notification_sent, notification_recipients, notification_provider_id,
+      ip, user_agent, referer, lang
+    ) VALUES (
+      ${record.site}, ${record.form}, ${record.stage}, ${record.outcome}, ${record.complete},
+      ${record.validated ?? null}, ${record.fields ? db.json(record.fields as Jsonable) : null},
+      ${record.notificationSent ?? null},
+      ${record.notificationRecipients ? db.json(record.notificationRecipients as Jsonable) : null},
+      ${record.notificationProviderId ?? null}, ${record.ip ?? null}, ${record.userAgent ?? null},
+      ${record.referer ?? null}, ${record.lang ?? null}
+    )
+  `;
+}
+
 async function persistFormSubmission(
   db: ReturnType<typeof postgres>,
   record: FormSubmissionRecord,
@@ -101,21 +127,7 @@ async function persistFormSubmission(
   try
     {
       await ensureTable(db);
-      type Jsonable = Parameters<typeof db.json>[0];
-      await db`
-        INSERT INTO pixelsmithforms.form_submissions (
-          site, form, stage, outcome, complete, validated, fields,
-          notification_sent, notification_recipients, notification_provider_id,
-          ip, user_agent, referer, lang
-        ) VALUES (
-          ${record.site}, ${record.form}, ${record.stage}, ${record.outcome}, ${record.complete},
-          ${record.validated ?? null}, ${record.fields ? db.json(record.fields as Jsonable) : null},
-          ${record.notificationSent ?? null},
-          ${record.notificationRecipients ? db.json(record.notificationRecipients as Jsonable) : null},
-          ${record.notificationProviderId ?? null}, ${record.ip ?? null}, ${record.userAgent ?? null},
-          ${record.referer ?? null}, ${record.lang ?? null}
-        )
-      `;
+      await insertFormSubmission(db, record);
     }
   catch (err)
     {
@@ -133,28 +145,51 @@ function submissionClient(): ReturnType<typeof postgres> | null
   return db;
 }
 
-function destroySubmissionClient(db: ReturnType<typeof postgres>): void
+async function persistNotificationSubmissionWithDeadline(record: FormSubmissionRecord): Promise<void>
 {
-  if (client === db)
+  const db = createClient();
+  if (!db)
     {
-      client = null;
+      console.log("[v0] Form submission tracking skipped: DATABASE_URL is not configured.");
+      return;
     }
-  tableReady = null;
-  void db.end({ timeout: 0 }).catch((err) => {
-    console.log("[v0] Form submission tracking client shutdown failed:", err);
-  });
-}
 
-async function persistFormSubmissionWithDeadline(
-  db: ReturnType<typeof postgres>,
-  record: FormSubmissionRecord,
-): Promise<void>
-{
   let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<"timeout">((resolve) => {
     timeoutHandle = setTimeout(() => resolve("timeout"), DURABLE_LOGGING_WAIT_LIMIT_MS);
   });
-  const persisted = persistFormSubmission(db, record).then(() => "persisted" as const);
+  const persisted = (async () => {
+    try
+      {
+        await db`CREATE SCHEMA IF NOT EXISTS pixelsmithforms`;
+        await db`
+          CREATE TABLE IF NOT EXISTS pixelsmithforms.form_submissions (
+            id BIGSERIAL PRIMARY KEY,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            site TEXT NOT NULL,
+            form TEXT NOT NULL,
+            stage TEXT NOT NULL,
+            outcome TEXT NOT NULL,
+            complete BOOLEAN NOT NULL DEFAULT false,
+            validated BOOLEAN,
+            fields JSONB,
+            notification_sent BOOLEAN,
+            notification_recipients JSONB,
+            notification_provider_id TEXT,
+            ip TEXT,
+            user_agent TEXT,
+            referer TEXT,
+            lang TEXT
+          )
+        `;
+        await insertFormSubmission(db, record);
+      }
+    catch (err)
+      {
+        console.log("[v0] Form submission tracking failed:", err);
+      }
+    return "persisted" as const;
+  })();
   const result = await Promise.race([persisted, timeout]);
 
   if (timeoutHandle)
@@ -164,13 +199,22 @@ async function persistFormSubmissionWithDeadline(
 
   if (result === "timeout")
     {
-      console.log("[v0] Durable form submission tracking exceeded its deadline; destroying the logging client.");
-      destroySubmissionClient(db);
+      console.log("[v0] Durable form submission tracking exceeded its deadline; cancelling the isolated logging client.");
     }
+
+  void db.end({ timeout: 0 }).catch((err) => {
+    console.log("[v0] Form submission tracking client shutdown failed:", err);
+  });
 }
 
 export async function recordFormSubmission(record: FormSubmissionRecord): Promise<void>
 {
+  if (record.notificationSent !== undefined)
+    {
+      await persistNotificationSubmissionWithDeadline(record);
+      return;
+    }
+
   const db = submissionClient();
   if (!db)
     {
@@ -180,12 +224,6 @@ export async function recordFormSubmission(record: FormSubmissionRecord): Promis
   if (record.stage === "client_attempt")
     {
       await persistFormSubmission(db, record);
-      return;
-    }
-
-  if (record.notificationSent !== undefined)
-    {
-      await persistFormSubmissionWithDeadline(db, record);
       return;
     }
 
