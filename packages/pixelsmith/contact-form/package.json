@@ -11,8 +11,12 @@
       "import": "./src/index.tsx"
     },
     "./server": {
-      "types": "./src/server.ts",
-      "import": "./src/server.ts"
+      "types": "./src/server-entry.ts",
+      "import": "./src/server-entry.ts"
+    },
+    "./submission-log": {
+      "types": "./src/submission-log.ts",
+      "import": "./src/submission-log.ts"
     },
     "./styles.css": "./src/styles.css"
   },
