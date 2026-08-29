@@ -1,9 +1,11 @@
 'use server'
 
+import { headers } from 'next/headers'
 import { siteConfig } from '@/lib/site'
 import { verifyTurnstileToken } from '@/lib/turnstile'
 import { renderEmailShell, renderSection, renderTextSection, type EmailRow } from '@/lib/email-template'
 import { getUI, type UIStrings } from '@/lib/i18n/ui'
+import { recordFormSubmission } from '@pixelsmith/contact-form/server'
 
 // The UI is bilingual, so the action returns a stable `code` instead of a
 // hard-coded sentence. The client (registration-content.tsx) maps the code
@@ -196,19 +198,45 @@ const TEXT_FIELDS = [
 
 const LIST_FIELDS = ['conditions', 'experiences', 'ritual'] as const
 
-// ONLY THE SUBMITTER'S OWN NAME/EMAIL, FIELD NAMES, AND OUTCOME CODES ARE
-// LOGGED BELOW — NEVER ANY OTHER FIELD VALUE. THIS FORM COLLECTS HEALTH
-// INFORMATION THAT MUST NEVER REACH THESE LOGS.
-function logRegistrationAttempt(
+// DELIBERATELY RECORDS FULL, UNREDACTED FIELD VALUES (INCLUDING HEALTH
+// INFORMATION) TO POSTGRES, AT THE SITE OWNER'S EXPLICIT REQUEST, SO NO
+// SUBMISSION IS EVER SILENTLY LOST. THE CONSOLE LOG LINE STAYS LIMITED TO
+// THE SUBMITTER'S NAME/EMAIL AND OUTCOME CODE FOR QUICK HUMAN SCANNING.
+async function logRegistrationAttempt(
   outcome: string,
   identity: { name: string; email: string },
-  extra?: Record<string, unknown>,
-): void {
+  options: {
+    complete: boolean
+    validated?: boolean
+    fields?: Record<string, unknown>
+    notificationSent?: boolean
+    notificationRecipients?: string[]
+    notificationProviderId?: string
+    extra?: Record<string, unknown>
+  },
+): Promise<void> {
   console.log('[v0] Registration form submission:', {
     outcome,
     name: identity.name || undefined,
     email: identity.email || undefined,
-    ...extra,
+    ...options.extra,
+  })
+
+  const h = await headers()
+  await recordFormSubmission({
+    site: h.get('host') ?? 'unknown',
+    form: 'registration',
+    stage: 'server_processed',
+    outcome,
+    complete: options.complete,
+    validated: options.validated,
+    fields: options.fields,
+    notificationSent: options.notificationSent,
+    notificationRecipients: options.notificationRecipients,
+    notificationProviderId: options.notificationProviderId,
+    ip: h.get('x-forwarded-for')?.split(',')[0]?.trim(),
+    userAgent: h.get('user-agent') ?? undefined,
+    referer: h.get('referer') ?? undefined,
   })
 }
 
@@ -222,24 +250,31 @@ export async function sendRegistration(
       .join(' '),
     email: str(formData, 'email'),
   }
-  const log = (outcome: string, extra?: Record<string, unknown>) => logRegistrationAttempt(outcome, identity, extra)
+
+  // Raw values as submitted, whatever they are — captured before any
+  // validation so an incomplete/invalid attempt is still fully recorded.
+  const rawFields: Record<string, string> = {}
+  for (const key of TEXT_FIELDS) rawFields[key] = str(formData, key)
+  const rawLists: Record<string, string[]> = {}
+  for (const key of LIST_FIELDS) rawLists[key] = list(formData, key)
+  const allSubmittedFields = { ...rawFields, ...rawLists }
+
+  const log = (outcome: string, options: Omit<Parameters<typeof logRegistrationAttempt>[2], 'fields'>) =>
+    logRegistrationAttempt(outcome, identity, { fields: allSubmittedFields, ...options })
 
   // Honeypot — bots fill this, humans don't. A browser autofill tool
   // mistakenly filling this would also land here, which is exactly the kind
   // of silent near-miss this log line exists to catch.
   if (str(formData, 'company').length > 0) {
-    log('honeypot_triggered')
+    await log('honeypot_triggered', { complete: true })
     return { status: 'success', code: 'success' }
   }
 
   // NOTIFICATION EMAILS ALWAYS USE SPANISH LABELS, REGARDLESS OF THE VISITOR'S SITE LANGUAGE.
   const tEmail = getUI('es')
 
-  const fields: Record<string, string> = {}
-  for (const key of TEXT_FIELDS) fields[key] = str(formData, key)
-
-  const lists: Record<string, string[]> = {}
-  for (const key of LIST_FIELDS) lists[key] = list(formData, key)
+  const fields = rawFields
+  const lists = rawLists
 
   const turnstileToken = str(formData, 'cf-turnstile-response')
 
@@ -263,35 +298,35 @@ export async function sendRegistration(
   const missingFields = requiredFields.filter(([, missing]) => missing).map(([key]) => key)
 
   if (missingFields.length > 0) {
-    log('missing_required_fields', { fields: missingFields })
+    await log('missing_required_fields', { complete: false, validated: false, extra: { fields: missingFields } })
     return { status: 'error', code: 'missing' }
   }
 
   for (const key of TEXT_FIELDS) {
     const max = key === 'dob' ? 10 : LIMITS.longTextMax
     if (fields[key].length > max) {
-      log('field_too_long', { field: key })
+      await log('field_too_long', { complete: false, validated: false, extra: { field: key } })
       return { status: 'error', code: 'generic' }
     }
   }
 
   if (fields.email && !isValidEmail(fields.email)) {
-    log('invalid_email')
+    await log('invalid_email', { complete: true, validated: false })
     return { status: 'error', code: 'invalidEmail' }
   }
 
   const age = ageFromDob(fields.dob)
   if (age === null) {
-    log('invalid_dob')
+    await log('invalid_dob', { complete: true, validated: false })
     return { status: 'error', code: 'invalidDob' }
   }
   if (age < LIMITS.minAge) {
-    log('underage')
+    await log('underage', { complete: true, validated: false })
     return { status: 'error', code: 'underage' }
   }
 
   if (fields.readDeclaration !== 'yes') {
-    log('declaration_not_accepted')
+    await log('declaration_not_accepted', { complete: true, validated: false })
     return { status: 'error', code: 'declarationRequired' }
   }
 
@@ -300,18 +335,22 @@ export async function sendRegistration(
   const turnstileSecret = process.env.TURNSTILE_SECRET_KEY
 
   if (!turnstileSecret) {
-    log('turnstile_secret_missing')
+    await log('turnstile_secret_missing', { complete: true, validated: true })
     return { status: 'error', code: 'challenge' }
   }
   if (!turnstileToken) {
-    log('turnstile_token_missing')
+    await log('turnstile_token_missing', { complete: true, validated: false })
     return { status: 'error', code: 'challenge' }
   }
 
   if (!apiKey || !senderEmail) {
-    log('brevo_env_not_configured', {
-      hasBrevoApiKey: Boolean(apiKey),
-      hasBrevoSenderEmail: Boolean(senderEmail),
+    await log('brevo_env_not_configured', {
+      complete: true,
+      validated: true,
+      extra: {
+        hasBrevoApiKey: Boolean(apiKey),
+        hasBrevoSenderEmail: Boolean(senderEmail),
+      },
     })
     return { status: 'error', code: 'notConnected' }
   }
@@ -320,7 +359,7 @@ export async function sendRegistration(
     const challengePassed = await verifyTurnstileToken(turnstileToken)
 
     if (!challengePassed) {
-      log('turnstile_verification_failed')
+      await log('turnstile_verification_failed', { complete: true, validated: false })
       return { status: 'error', code: 'challenge' }
     }
 
@@ -362,14 +401,31 @@ export async function sendRegistration(
 
     if (!response.ok) {
       const error = (await response.json().catch(() => ({}))) as BrevoError
-      log('brevo_send_failed', { status: response.status, error })
+      await log('brevo_send_failed', {
+        complete: true,
+        validated: true,
+        notificationSent: false,
+        notificationRecipients: siteConfig.notificationEmails,
+        extra: { status: response.status, error },
+      })
       return { status: 'error', code: 'generic' }
     }
 
-    log('success')
+    // Brevo returns { messageId } on acceptance — this is the actual proof of
+    // send, recorded alongside the submission so a "no notification arrived"
+    // report can be checked against what Brevo itself confirmed.
+    const sendResult = (await response.json().catch(() => ({}))) as { messageId?: string }
+
+    await log('success', {
+      complete: true,
+      validated: true,
+      notificationSent: true,
+      notificationRecipients: siteConfig.notificationEmails,
+      notificationProviderId: sendResult.messageId,
+    })
     return { status: 'success', code: 'success' }
   } catch (err) {
-    log('exception', { error: String(err) })
+    await log('exception', { complete: true, validated: false, extra: { error: String(err) } })
     return { status: 'error', code: 'generic' }
   }
 }

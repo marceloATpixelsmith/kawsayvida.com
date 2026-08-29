@@ -30,6 +30,12 @@ BREVO_API_KEY
 BREVO_FROM_EMAIL
 ```
 
+Optional env name, for durable submission tracking (see below):
+
+```text
+DATABASE_URL
+```
+
 The names are standardized. Their secret values must never be invented or committed.
 
 ## Agent intake checklist
@@ -104,11 +110,31 @@ Do not invent:
 - success/error wording when content requirements are material and not supplied;
 - an alternate email provider without being asked.
 
-## Diagnostics beacon (optional)
+## Durable submission tracking (optional, Postgres-backed)
 
-Pass `diagnosticsEndpoint` to `<ContactForm>` to POST a beacon (`{ form: "contact", outcome, invalidFields, name, email }`) to that URL on every submit attempt, including ones blocked by client-side validation before any real submission is made. `invalidFields` is only ever field *names*, never values. `name`/`email` are omitted unless `diagnosticsIdentityFields` is also passed (e.g. `{ name: ["firstName", "lastName"], email: "email" }`) — no other field's value is ever sent. Useful for troubleshooting "I filled it out but got no notification" reports, and for following up with whoever it was. Both props are unset by default — no calls are made, and no identity is sent, unless a consuming site opts in.
+At a site owner's explicit request, this package can record **every** form submission attempt to Postgres — including incomplete ones that never passed client-side validation, and including the full, unredacted field values — so a submission is never silently lost. This is deliberately **not** a PII-free log: if a form collects sensitive or health information, that information is stored as submitted. Restrict database access accordingly, and only enable this when the site owner has explicitly asked for it.
 
-`createContactHandler` mirrors this server-side: pass `identityFields` in its config for the same `name`/`email` resolution in the server's own console logs on every outcome (honeypot/validation/Turnstile/Brevo failures and success).
+Set `DATABASE_URL` to enable it (any standard Postgres connection string — the package uses the `postgres` npm client directly, not a Vercel-specific env var). When unset, tracking is silently skipped and the form behaves exactly as without it — a database outage or missing config never blocks a real submission.
+
+Data lands in a dedicated schema so it doesn't collide with a site's other tables: `pixelsmithforms.form_submissions` (created automatically on first use). Each row records: which site (from the request's `Host` header), which form, the stage (`client_attempt` — a submit click the browser saw, may never have reached the server — vs. `server_processed`), the outcome code, whether the submission was complete/validated, the raw field values, whether the notification email was confirmed sent and to whom, the email provider's own message ID as proof of acceptance, and the visitor's IP/user-agent/referer/language.
+
+Two pieces wire it up:
+
+- **`createContactHandler`** (server) records every outcome automatically — no config needed beyond `DATABASE_URL`.
+- **`<ContactForm submissionLogEndpoint="/api/your-route" />`** (client) fires a beacon on every submit click, including ones blocked by client-side validation, so incomplete attempts are captured too. Mount `createSubmissionLogHandler()` at that route:
+
+```ts
+// app/api/form-log/route.ts
+import { createSubmissionLogHandler } from '@pixelsmith/contact-form/server'
+
+export const POST = createSubmissionLogHandler()
+```
+
+Any other form on the same site (even one not built with this package, like a bespoke Server Action) can reuse the same route and the same `recordFormSubmission` function directly — see its JSDoc in `src/submissions.ts` for the record shape.
+
+## Identity in console logs (optional)
+
+Separately from Postgres tracking, pass `identityFields` to `createContactHandler`'s config (e.g. `{ name: ["firstName", "lastName"], email: "email" }`) to include the submitter's own name/email in the server's plain-text `[v0]` console logs on every outcome — useful for a quick human scan without opening the database. Unset by default.
 
 ## Typical server route
 

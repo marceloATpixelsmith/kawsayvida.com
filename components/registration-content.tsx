@@ -188,23 +188,36 @@ function SubmitButton({ label, sending }: { label: string; sending: string }) {
   )
 }
 
-// Fire-and-forget diagnostics beacon, called on every submit click —
+// Builds a plain field-name -> value(s) object from FormData, grouping
+// repeated `foo[]` entries into arrays, and excluding the honeypot/Turnstile
+// fields (neither is useful to track).
+function formDataToFields(fd: FormData): Record<string, string | string[]> {
+  const result: Record<string, string | string[]> = {}
+  for (const [key, value] of fd.entries()) {
+    if (key === 'company' || key === 'cf-turnstile-response') continue
+    const stringValue = String(value)
+    if (key.endsWith('[]')) {
+      const cleanKey = key.slice(0, -2)
+      const existing = result[cleanKey]
+      if (Array.isArray(existing)) existing.push(stringValue)
+      else result[cleanKey] = [stringValue]
+    } else {
+      result[key] = stringValue
+    }
+  }
+  return result
+}
+
+// Fire-and-forget submission-tracking beacon, called on every submit click —
 // including attempts blocked by client-side validation before they ever
-// reach sendRegistration() — so a failed/incomplete submission can still be
-// followed up on. Only the submitter's own name/email and the NAMES of
-// invalid fields are sent; no other field value (this form collects health
-// information) ever reaches this beacon.
-function logFormAttempt(
-  outcome: string,
-  invalidFields: string[],
-  lang: string,
-  name: string,
-  email: string,
-): void {
+// reach sendRegistration() — so no submission is ever lost. Sends the full,
+// unredacted field values by design (this form collects health information,
+// and losing track of a submission matters more than keeping it private).
+function logFormAttempt(outcome: string, complete: boolean, fields: Record<string, unknown>, lang: string): void {
   fetch('/api/form-log', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ form: 'registration', outcome, invalidFields, lang, name, email }),
+    body: JSON.stringify({ form: 'registration', outcome, complete, fields, lang }),
     keepalive: true,
   }).catch(() => {})
 }
@@ -303,15 +316,8 @@ export function RegistrationContent({ visibleRegistrationDates }: { visibleRegis
 
     setClientErrors(errors)
 
-    const invalidFields = Object.keys(errors)
-    const submitterName = [get('names'), get('paternalLastName'), get('maternalLastName')].filter(Boolean).join(' ')
-    logFormAttempt(
-      invalidFields.length > 0 ? 'blocked_client_validation' : 'submitted',
-      invalidFields,
-      lang,
-      submitterName,
-      get('email'),
-    )
+    const complete = Object.keys(errors).length === 0
+    logFormAttempt(complete ? 'submitted' : 'blocked_client_validation', complete, formDataToFields(fd), lang)
 
     if (Object.keys(errors).length > 0) {
       event.preventDefault()
