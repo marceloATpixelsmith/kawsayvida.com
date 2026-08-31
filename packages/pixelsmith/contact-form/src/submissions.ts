@@ -1,10 +1,29 @@
-import postgres from "postgres";
+type PostgresFactory = (connectionString: string, options?: Record<string, unknown>) => any;
+type PostgresClient = ReturnType<PostgresFactory>;
 
-let client: ReturnType<typeof postgres> | null = null;
+let postgresFactoryPromise: Promise<PostgresFactory | null> | null = null;
+let client: PostgresClient | null = null;
 let tableReady: Promise<void> | null = null;
 
 const LOGGING_WAIT_LIMIT_MS = 1_000;
 const DURABLE_LOGGING_WAIT_LIMIT_MS = 2_500;
+
+//LOAD THE POSTGRES PACKAGE AT RUNTIME SO SITES WITHOUT IT STILL BUILD AND TRACKING SAFELY NO-OPS
+function loadPostgresFactory(): Promise<PostgresFactory | null>
+{
+  if (!postgresFactoryPromise)
+    {
+      const specifier = "postgres";
+      postgresFactoryPromise = import(/* webpackIgnore: true */ specifier)
+        .then((mod: any) => (mod.default ?? mod) as PostgresFactory)
+        .catch((err) => {
+          console.log("[v0] Form submission tracking skipped: the 'postgres' package is not installed on this site.", err);
+          return null;
+        });
+    }
+
+  return postgresFactoryPromise;
+}
 
 function sanitizeConnectionString(connectionString: string): string
 {
@@ -20,10 +39,16 @@ function sanitizeConnectionString(connectionString: string): string
     }
 }
 
-function createClient(): ReturnType<typeof postgres> | null
+async function createClient(): Promise<PostgresClient | null>
 {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString)
+    {
+      return null;
+    }
+
+  const postgres = await loadPostgresFactory();
+  if (!postgres)
     {
       return null;
     }
@@ -34,17 +59,17 @@ function createClient(): ReturnType<typeof postgres> | null
   });
 }
 
-function getClient(): ReturnType<typeof postgres> | null
+async function getClient(): Promise<PostgresClient | null>
 {
   if (!client)
     {
-      client = createClient();
+      client = await createClient();
     }
 
   return client;
 }
 
-async function ensureTable(db: ReturnType<typeof postgres>): Promise<void>
+async function ensureTable(db: PostgresClient): Promise<void>
 {
   if (!tableReady)
     {
@@ -98,7 +123,7 @@ export interface FormSubmissionRecord
 }
 
 async function insertFormSubmission(
-  db: ReturnType<typeof postgres>,
+  db: PostgresClient,
   record: FormSubmissionRecord,
 ): Promise<void>
 {
@@ -120,7 +145,7 @@ async function insertFormSubmission(
 }
 
 async function persistFormSubmission(
-  db: ReturnType<typeof postgres>,
+  db: PostgresClient,
   record: FormSubmissionRecord,
 ): Promise<void>
 {
@@ -135,10 +160,10 @@ async function persistFormSubmission(
     }
 }
 
-function submissionClient(): ReturnType<typeof postgres> | null
+async function submissionClient(): Promise<PostgresClient | null>
 {
-  const db = getClient();
-  if (!db)
+  const db = await getClient();
+  if (!db && !process.env.DATABASE_URL)
     {
       console.log("[v0] Form submission tracking skipped: DATABASE_URL is not configured.");
     }
@@ -147,10 +172,13 @@ function submissionClient(): ReturnType<typeof postgres> | null
 
 async function persistNotificationSubmissionWithDeadline(record: FormSubmissionRecord): Promise<void>
 {
-  const db = createClient();
+  const db = await createClient();
   if (!db)
     {
-      console.log("[v0] Form submission tracking skipped: DATABASE_URL is not configured.");
+      if (!process.env.DATABASE_URL)
+        {
+          console.log("[v0] Form submission tracking skipped: DATABASE_URL is not configured.");
+        }
       return;
     }
 
@@ -202,7 +230,7 @@ async function persistNotificationSubmissionWithDeadline(record: FormSubmissionR
       console.log("[v0] Durable form submission tracking exceeded its deadline; cancelling the isolated logging client.");
     }
 
-  void db.end({ timeout: 0 }).catch((err) => {
+  void db.end({ timeout: 0 }).catch((err: unknown) => {
     console.log("[v0] Form submission tracking client shutdown failed:", err);
   });
 }
@@ -215,7 +243,7 @@ export async function recordFormSubmission(record: FormSubmissionRecord): Promis
       return;
     }
 
-  const db = submissionClient();
+  const db = await submissionClient();
   if (!db)
     {
       return;
@@ -247,7 +275,7 @@ export async function recordFormSubmission(record: FormSubmissionRecord): Promis
 
 export async function recordFormSubmissionDurably(record: FormSubmissionRecord): Promise<void>
 {
-  const db = submissionClient();
+  const db = await submissionClient();
   if (!db)
     {
       return;
