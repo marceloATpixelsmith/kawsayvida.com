@@ -21,7 +21,7 @@ export interface ContactHandlerConfig
   messages?: ContactFormMessages;
   allowedOrigins?: readonly string[];
   maxBodyBytes?: number;
-  /** INCLUDE ZANGFUQI@GMAIL.COM AS AN ADDITIONAL NOTIFICATION RECIPIENT. DEFAULTS TO TRUE; SET FALSE TO OPT OUT. */
+  /** CC ZANGFUQI@GMAIL.COM ON EVERY NOTIFICATION EMAIL. DEFAULTS TO TRUE; SET FALSE TO OPT OUT. */
   includePixelsmithNotificationRecipient?: boolean;
   /** WHICH SUBMITTED-VALUES FIELD NAME(S) TO INCLUDE AS THE SUBMITTER'S IDENTITY IN SERVER LOGS, SO A FAILED SUBMISSION CAN STILL BE FOLLOWED UP ON. `name` MAY LIST MULTIPLE FIELDS TO JOIN (E.G. FIRST + LAST). OMITTING A KEY (OR THIS WHOLE PROP) LOGS NO IDENTITY FOR IT. */
   identityFields?: { name?: string | readonly string[]; email?: string };
@@ -51,19 +51,36 @@ function escapeHtml(value: string): string
     .replaceAll("'", "&#039;");
 }
 
-function normalizeEmailList(
-  value: string | readonly string[],
-  includePixelsmithNotificationRecipient = true,
-): { email: string }[]
+function normalizeEmailList(value: string | readonly string[]): { email: string }[]
 {
   const addresses = Array.isArray(value) ? [...value] : [value];
-  if (includePixelsmithNotificationRecipient)
-    {
-      addresses.push(PIXELSMITH_NOTIFICATION_EMAIL);
-    }
-
   return [...new Set(addresses.map((email) => email.trim()).filter(Boolean))]
     .map((email) => ({ email }));
+}
+
+// Resolves the primary "to" recipients plus, unless opted out, the
+// maintainer address as a CC rather than an additional "to" recipient — so
+// it never shows up as a primary addressee (e.g. in a reply-all).
+function resolveRecipients(
+  to: string | readonly string[],
+  includePixelsmithNotificationRecipient: boolean,
+): { to: { email: string }[]; cc?: { email: string }[] }
+{
+  const toRecipients = normalizeEmailList(to);
+  if (!includePixelsmithNotificationRecipient)
+    {
+      return { to: toRecipients };
+    }
+
+  const alreadyIncluded = toRecipients.some(
+    (recipient) => recipient.email.toLowerCase() === PIXELSMITH_NOTIFICATION_EMAIL.toLowerCase(),
+  );
+  if (alreadyIncluded)
+    {
+      return { to: toRecipients };
+    }
+
+  return { to: toRecipients, cc: [{ email: PIXELSMITH_NOTIFICATION_EMAIL }] };
 }
 
 function isValidPayload(value: unknown): value is ContactFormPayload
@@ -242,14 +259,15 @@ async function sendWithBrevo(
   const replyTo = typeof replyToValue === "string" && replyToValue.includes("@")
     ? { email: replyToValue }
     : undefined;
-  const recipients = normalizeEmailList(config.to, config.includePixelsmithNotificationRecipient !== false);
+  const { to: toRecipients, cc } = resolveRecipients(config.to, config.includePixelsmithNotificationRecipient !== false);
 
   const payload = {
     sender: {
       email: fromEmail,
       name: config.fromName ?? "Website Contact Form",
     },
-    to: recipients,
+    to: toRecipients,
+    ...(cc ? { cc } : {}),
     subject,
     htmlContent: renderEmailHtml(config.fields, values),
     ...(replyTo ? { replyTo } : {}),
@@ -275,7 +293,7 @@ async function sendWithBrevo(
     ok: response.ok,
     status: response.status,
     messageId: result.messageId,
-    recipients: recipients.map((recipient) => recipient.email),
+    recipients: [...toRecipients, ...(cc ?? [])].map((recipient) => recipient.email),
   };
 }
 
