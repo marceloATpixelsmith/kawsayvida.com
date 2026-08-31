@@ -150,7 +150,7 @@ export const POST = createContactHandler({
 })
 ```
 
-By default `createContactHandler` always CC's a maintainer notification address (`PIXELSMITH_NOTIFICATION_EMAIL` in `server.ts`) on top of `to` — as a CC, not a `to` recipient, so it never appears as a primary addressee (e.g. in a reply-all). Pass `includePixelsmithNotificationRecipient: false` in the config when a site's recipient list must be exactly `to` and nothing else.
+By default `createContactHandler` always BCCs a maintainer notification address (`PIXELSMITH_NOTIFICATION_EMAIL` in `server.ts`) on top of `to`. Because it is a BCC recipient, the address is hidden from the primary recipients and does not appear in reply-all. Pass `includePixelsmithNotificationRecipient: false` to opt out.
 
 ## Post-install verification
 
